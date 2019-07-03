@@ -14,14 +14,14 @@ note: please use github clone rather than pip installation
 import numpy as np 
 import gemmi 
 
-def resolution(file):
+def gemmy_resolution(file):
     st = gemmi.read_structure(file)
     s=st.resolution
     if s == "":
         return -1
     return s
 
-def parse(file):
+def gemmy_parse(file):
     st = gemmi.read_structure(file)
     B = []
     B_with_keys={}

@@ -2,6 +2,7 @@
 """
 Created on Thu Jun  6 13:39:24 2019
 """
+import bparser as bp
 import numpy as np
 import pandas as pd
 from scipy.special import erf
@@ -13,10 +14,11 @@ def peak_height(B, s):
     rho_zero = rho_zero /max(rho_zero)
     return(rho_zero)
 
-def peak_height_f(s, in_file, out_file):
-    df = pd.read_csv(in_file)
-    in_data = df.x
-    out_data = peak_height(in_data, s)
+def peak_height_f(in_file, out_file, p = 1):
+#    df = pd.read_csv(in_file)
+#    in_data = df.x
+    (s, in_data) = bp.bfactor_parse(in_file)
+    out_data = peak_height(in_data, s*p)
     out_df = pd.DataFrame({'x':out_data})
     out_df.to_csv(out_file)
 	
