@@ -87,7 +87,7 @@ To find modes we use Conjugate Gradient method.
 Iter parameter defines number of iterations. 
 Each iteration starts from different point.   
 """
-def modes(data, h = 0, iter = 5, x_tol = 0.00001):    
+def modes(data, h = 0, iter = 5, x_tol = 0.00001, rnd = 2):    
     result = list()
     if h == 0 :
         h = get_width_apr(data)
@@ -96,9 +96,10 @@ def modes(data, h = 0, iter = 5, x_tol = 0.00001):
     line = np.linspace(start=min(data), stop=max(data), num=iter)
     for t in line:
         res = sco.minimize(fm, [t], method="CG", jac=df)
-        result.append(res.x[0])
+        result.append(round(res.x[0], rnd))
     result.sort()        
-    return remove_dup(result, x_tol)
+    result = remove_dup(result, x_tol)
+    return (len(result), result)
 
    
 
