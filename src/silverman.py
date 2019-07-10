@@ -32,17 +32,11 @@ def kernel(datum, mu, h):
 def kde(data, h):
     return lambda x: sum([kernel(x, d, h) for d in data])/(len(data))
 
-# This function accepts data and bandwidth and returns -kde.      
-def mkde(data, h):
-    return lambda x: sum([-1*kernel(x, d, h) for d in data])/(len(data))
 
 # This function accepts data and bandwidth and returns derivative of kde. 
 def dkde(data, h):
     return lambda x: sum([(-(x-d)/(h**2))*kernel(x, d, h) for d in data])/(len(data))
 
-# This function accepts data and bandwidth and returns -dkde. 
-def ndkde(data, h):
-    return lambda x: -sum([(-(x-d)/(h**2))*kernel(x, d, h) for d in data])/(len(data))
 
 
 #This function double value and list of doubles. Returns true if value contains in the list
@@ -78,7 +72,11 @@ def find_widths(in_dir):
           df = pd.read_csv(in_dir + "/" + file)
           data = df.x
           result[file] = get_width_apr(data)
-    return result     
+    return result    
+
+def filter_bymax(l, f):
+    mx = max(l)
+    return [v for v in l if f(v/mx) > 0.1]
 
 """
 This function accepts data and bandwidth and returns list of modes
@@ -87,21 +85,49 @@ To find modes we use Conjugate Gradient method.
 Iter parameter defines number of iterations. 
 Each iteration starts from different point.   
 """
-def modes(data, h = 0, iter = 5, x_tol = 0.00001, rnd = 2):    
+def modes(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):    
     result = list()
     if h == 0 :
         h = get_width_apr(data)
-    df = ndkde(data, h)
-    fm = mkde(data, h)
-    line = np.linspace(start=min(data), stop=max(data), num=iter)
-    for t in line:
-        res = sco.minimize(fm, [t], method="CG", jac=df)
+    df = dkde(data, h)
+    fm = kde(data, h)
+    start = min(data)
+    end = max(data)
+    delta = (end - start)/max_iter
+    point = min(data)
+    while point < end:
+        res = sco.minimize(lambda x: -fm(x), [point], method="CG", jac=lambda x: -df(x))
         result.append(round(res.x[0], rnd))
+        point = point + delta
     result.sort()        
-    result = remove_dup(result, x_tol)
+    result = filter_bymax(remove_dup(result, x_tol), fm)
     return (len(result), result)
 
-   
+
+def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):    
+    result = list()
+    if h == 0 :
+        h = get_width_apr(data)
+    df = dkde(data, h)
+    f = kde(data, h)
+    
+    line = np.linspace(start=min(data), stop=max(data), num=100)
+    min_point = list()
+    s = df(min(data))
+    for x in line:
+        if(s*np.sign(df(x)) == -1):
+            min_point.append(x)
+        s = np.sign(df(x))
+    i = 0    
+    while i < len(min_point):    
+#        res = sco.minimize(lambda x: -f(x), [min_point[i]], method="CG", jac=lambda x: -df(x))
+#        result.append(round(res.x[0], rnd))
+        result.append(round(min_point[i], rnd))
+        i = i + 2
+        
+    result.sort()        
+    result = filter_bymax(remove_dup(result, x_tol), f)
+    return (len(result), result)   
 
 #in_directory = "../data/ph"
 #
@@ -113,12 +139,23 @@ def modes(data, h = 0, iter = 5, x_tol = 0.00001, rnd = 2):
     Example 1     
 """
 
-df = pd.read_csv("../data/ph/5FFJ_out.txt")
-data = df.x
+#df = pd.read_csv("../data/ph/2XAD_out.txt")
+#data = df.x
+#h = get_width_apr(data)
+#f = kde(data, h)
+#df = dkde(data, h)
+#
+#modes = modes2(data)
+#print(modes)
 
-print(modes(data))
-
-
+#
+#import seaborn as sns
+#import matplotlib.pyplot as plt
+#x = np.linspace(start=min(data), stop=max(data), num=100)
+#sns.distplot(data, bins=20, kde=False, norm_hist=True)
+#g_both = [f(e) for e in x]
+#plt.plot(x, g_both, label='gaussian mixture')
+#plt.legend()
 
 """ 
     Example 2 
@@ -128,7 +165,9 @@ result = {}
 in_dir = "../data/ph"
 files = get_files(in_dir)
 for file in files:
+      print(file)
       df = pd.read_csv(in_dir + "/" + file)
       data = df.x
-      result[file] = modes(data)
+      result[file] = modes2(data)
 print(result)
+
