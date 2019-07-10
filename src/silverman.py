@@ -75,8 +75,8 @@ def find_widths(in_dir):
     return result    
 
 def filter_bymax(l, f):
-    mx = max(l)
-    return [v for v in l if f(v)/f(mx) > 0.1]
+    mx = max([f(v) for v in l])
+    return [v for v in l if f(v)/mx > 0.1]
 
 """
 This function accepts data and bandwidth and returns list of modes
@@ -139,7 +139,7 @@ def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):
     Example 1     
 """
 
-#df = pd.read_csv("../data/ph/1F17_out.txt")
+#df = pd.read_csv("../data/ph/2PAN_out.txt")
 #data = df.x
 #h = get_width_apr(data)
 #f = kde(data, h)
@@ -161,13 +161,13 @@ def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):
     Example 2 
     Finding modes of all data in directory     
 """
-result = {}
-in_dir = "../data/ph"
-files = get_files(in_dir)
-for file in files:
-      print(file)
-      df = pd.read_csv(in_dir + "/" + file)
-      data = df.x
-      result[file] = modes2(data)
-print(result)
+#result = {}
+#in_dir = "../data/ph"
+#files = get_files(in_dir)
+#for file in files:
+#      print(file)
+#      df = pd.read_csv(in_dir + "/" + file)
+#      data = df.x
+#      result[file] = modes2(data)
+#print(result)
 
