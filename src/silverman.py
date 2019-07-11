@@ -10,7 +10,7 @@ from math import sqrt, exp, pi
 import pandas as pd
 import numpy as np
 import scipy.optimize as sco
-
+import scipy.special as scp
 import os
 import itertools
 
@@ -32,6 +32,9 @@ def kernel(datum, mu, h):
 def kde(data, h):
     return lambda x: sum([kernel(x, d, h) for d in data])/(len(data))
 
+# This function accepts data and bandwidth and returns kernel density estimation function (kde)
+def ckde(data, h):
+    return lambda x: sum([0.5*(1 + scp.erf((x - d)/(h*sqrt(2)))) for d in data])/(len(data))
 
 # This function accepts data and bandwidth and returns derivative of kde. 
 def dkde(data, h):
@@ -57,7 +60,7 @@ def remove_dup(duplicate, x_tol = 0.00001):
 
 #This function accepts data retruns bandwidth 
 def get_width(data):
-    ((4*(np.std(data)**5))/(3*len(data)))**(1/5)
+    return ((4*(np.std(data)**5))/(3*len(data)))**(1/5)
 
 #This function accepts data retruns bandwidth using approximate formula 
 def get_width_apr(data):
@@ -139,15 +142,18 @@ def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):
     Example 1     
 """
 
-#df = pd.read_csv("../data/ph/2PAN_out.txt")
+#df = pd.read_csv("../data/ph/3AZI_out.txt")
 #data = df.x
+#
 #h = get_width_apr(data)
+#print(h)
+#h = 0.01
+#cdf = ckde(data, h)
 #f = kde(data, h)
 #df = dkde(data, h)
 #
-#modes = modes2(data)
-#print(modes)
-
+#print(modes2(data, h = h))
+##print(modes(data, h = h))
 #
 #import seaborn as sns
 #import matplotlib.pyplot as plt
@@ -156,11 +162,19 @@ def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):
 #g_both = [f(e) for e in x]
 #plt.plot(x, g_both, label='gaussian mixture')
 #plt.legend()
-
-""" 
+#
+#
+#from scipy.stats import chisquare
+#import statsmodels.api as sm
+#from scipy import stats
+#
+#
+#print(stats.kstest(data, cdf))
+''' 
     Example 2 
     Finding modes of all data in directory     
-"""
+'''
+
 #result = {}
 #in_dir = "../data/ph"
 #files = get_files(in_dir)
@@ -170,4 +184,27 @@ def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):
 #      data = df.x
 #      result[file] = modes2(data)
 #print(result)
+
+
+'''
+'''
+
+#from scipy.stats import chisquare
+#import statsmodels.api as sm
+#from scipy import stats
+#
+#
+#
+#
+#in_dir = "../data/ph"
+#files = get_files(in_dir)
+#for file in files:
+#      df = pd.read_csv(in_dir + "/" + file)
+#      data = df.x
+#      h = get_width_apr(data)
+#      cdf = ckde(data, h)
+#     
+#      print(file)
+#      print(stats.kstest(data, cdf))
+
 
