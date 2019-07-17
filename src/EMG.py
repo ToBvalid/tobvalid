@@ -75,11 +75,12 @@ class GaussianMixture(embase.Mixture):
             self.log[i] += -1*sum((w * ((d - self.dist[i].mu) ** 2))/(self.dist[i].sigma**2) 
                 + w*log(self.dist[i].sigma**2) for (w, d) in zip(z[i], self.data))/2
         self.loglike = sum(self.log)
+        self.z = z
 
     def iterate(self, N=1, verbose=False):
         "Perform N iterations, then compute log-likelihood"
         self.Mstep(self.Estep())  
-        
+          
     def __repr__(self):
         return ''.join(['GaussianMixture({0}, mix={1:.03}) '.format(self.dist[i], self.mix[i]) for i in range(self.mode)])
     
@@ -88,37 +89,33 @@ class GaussianMixture(embase.Mixture):
 
 
 
-x = np.linspace(start=-10, stop=10, num=1000)
-df = pd.read_csv("../data/ph/1F17_out.txt")
-data = df.x
-
-
-# Find best Mixture Gaussian model
-n_iterations = 1000
-n_random_restarts = 1
-best_mix = None
-best_loglike = float('-inf')
-last_loglike = float('-inf')
-print('Computing best model with random restarts...\n')
-for _ in range(n_random_restarts):
-    mix = GaussianMixture(data, 1)
-    for i in range(n_iterations):
+def em(data, mode, max_iter = 100, x_tol = 0.01):
+    # Find best Mixture Gaussian model
+    last_loglike = float('-inf')
+    mix = GaussianMixture(data, mode)
+    for i in range(max_iter):
         try:
             mix.iterate()
-            if mix.loglike > best_loglike:
-                best_loglike = mix.loglike
-                best_mix = mix
-
-            if abs((last_loglike - mix.loglike)/mix.loglike) < 0.01:
-                best_loglike = mix.loglike
-                best_mix = mix
-                break
+            if abs((last_loglike - mix.loglike)/mix.loglike) < x_tol:
+                return mix
             last_loglike = mix.loglike
         except (ZeroDivisionError, ValueError, RuntimeWarning): # Catch division errors from bad starts, and just throw them out...
            pass
-print(best_loglike)
-print(best_mix )
-print('\n\nDone. 🙂')
+    return mix
+
+x = np.linspace(start=-10, stop=10, num=1000)
+df = pd.read_csv("../data/ph/5EED_out.txt")
+data = df.x
+
+
+best_mix = em(data, 3)
+print(best_mix)
+print([sum(z) for z in best_mix.z])
+print([np.mean(z) for z in best_mix.z])
+print([np.median(z) for z in best_mix.z])
+print([np.var(z) for z in best_mix.z])
+print(np.mean(data))
+
 
 
 
@@ -135,6 +132,5 @@ observed_values = histo
 cdf = best_mix.cdf(bin_edges)
 expected_values = len(data) * np.diff(cdf)
 c , p = st.chisquare(observed_values, expected_values)
-print(c)
 print(p)
 

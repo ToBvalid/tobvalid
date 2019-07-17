@@ -142,34 +142,32 @@ def modes2(data, h = 0, max_iter = 10, x_tol = 0.00001, rnd = 2):
     Example 1     
 """
 
-#df = pd.read_csv("../data/ph/3AZI_out.txt")
-#data = df.x
-#
-#h = get_width_apr(data)
-#print(h)
-#h = 0.01
-#cdf = ckde(data, h)
-#f = kde(data, h)
-#df = dkde(data, h)
-#
-#print(modes2(data, h = h))
-##print(modes(data, h = h))
-#
-#import seaborn as sns
-#import matplotlib.pyplot as plt
-#x = np.linspace(start=min(data), stop=max(data), num=100)
-#sns.distplot(data, bins=20, kde=False, norm_hist=True)
-#g_both = [f(e) for e in x]
-#plt.plot(x, g_both, label='gaussian mixture')
-#plt.legend()
-#
-#
-#from scipy.stats import chisquare
-#import statsmodels.api as sm
-#from scipy import stats
-#
-#
-#print(stats.kstest(data, cdf))
+df = pd.read_csv("../data/ph/5EED_out.txt")
+data = df.x
+
+h = get_width_apr(data)
+cdf = ckde(data, h)
+f = kde(data, h)
+df = dkde(data, h)
+
+print(modes2(data, h = h))
+#print(modes(data, h = h))
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+x = np.linspace(start=min(data), stop=max(data), num=100)
+sns.distplot(data, bins=20, kde=False, norm_hist=True)
+g_both = [f(e) for e in x]
+plt.plot(x, g_both, label='gaussian mixture')
+plt.legend()
+
+
+from scipy.stats import chisquare
+import statsmodels.api as sm
+from scipy import stats
+
+
+print(stats.kstest(data, cdf))
 ''' 
     Example 2 
     Finding modes of all data in directory     
