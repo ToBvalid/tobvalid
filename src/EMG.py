@@ -104,11 +104,18 @@ def em(data, mode, max_iter = 100, x_tol = 0.01):
     return mix
 
 x = np.linspace(start=-10, stop=10, num=1000)
-df = pd.read_csv("../data/ph/5EED_out.txt")
+df = pd.read_csv("../data/ph/3AZI_out.txt")
 data = df.x
 
 
-best_mix = em(data, 3)
+
+import time
+start = time.time()  
+best_mix = em(data, 2, max_iter = 2)
+end = time.time()
+
+print(end - start)
+
 print(best_mix)
 print([sum(z) for z in best_mix.z])
 print([np.mean(z) for z in best_mix.z])
@@ -126,11 +133,13 @@ g_both = [best_mix.pdf(e) for e in x]
 plt.plot(x, g_both, label='gaussian mixture')
 plt.legend()
 
-histo, bin_edges = np.histogram(data, bins='auto', normed=False)
+histo, bin_edges = np.histogram(data, bins='auto', density =False)
 number_of_bins = len(bin_edges) - 1
 observed_values = histo
 cdf = best_mix.cdf(bin_edges)
 expected_values = len(data) * np.diff(cdf)
-c , p = st.chisquare(observed_values, expected_values)
-print(p)
+result = st.ks_2samp(observed_values, expected_values)
+print(result)
+
+print(st.kstest(data, best_mix.cdf))
 
