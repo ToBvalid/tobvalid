@@ -219,6 +219,15 @@ def boot_silverman(data, x_tol = 0.00001, rnd=2, p_value = 0.05, min_bandwidth =
     return (nmode, modes)
 
 
+#import seaborn as sns
+#import matplotlib.pyplot as plt
+#
+#df = pd.read_csv("../data/ph/5HTF_out.txt")
+#data = df.x
+#x = np.linspace(stop=0, start=1, num=100)
+#
+#sns.distplot(data, bins=20, kde=False, norm_hist=True)
+
 
 #import time
 #
