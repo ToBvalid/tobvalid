@@ -13,32 +13,33 @@ import time
 
 
 
-in_dir = "../data/ph"
-files = sv.get_files(in_dir)
-stats = {}
-for file in files:
-      print(file)
-      df = pd.read_csv(in_dir + "/" + file)
-      data = df.x
-      start = time.time()
-      res = sv.boot_silverman(data)
-      end = time.time()
-      stats[file] = (end - start, res)
-      
-print(stats)  
-
+#in_dir = "../data/ph"
 #files = sv.get_files(in_dir)
-#myfit = {}
+#stats = {}
 #for file in files:
 #      print(file)
 #      df = pd.read_csv(in_dir + "/" + file)
 #      data = df.x
 #      start = time.time()
-#      res = sv.silverman(data, fit = sv.fit_data)
+#      res = sv.boot_silverman(data)
 #      end = time.time()
-#      myfit[file] = (end - start, res)
+#      stats[file] = (end - start, res)
 #      
-#print(myfit)       
+#print(stats)  
+
+#in_dir = "../data/bfactor"
+#files = sv.get_files(in_dir)
+#stats = {}
+#for file in files:
+#      print(file)
+#      df = pd.read_csv(in_dir + "/" + file)
+#      data = df.to_numpy().flatten()
+#      start = time.time()
+#      res = sv.boot_silverman(data, length=2000, max_bandwidth = 10)
+#      end = time.time()
+#      stats[file] = (end - start, res)
+#      
+#print(stats)  
 
 
 #

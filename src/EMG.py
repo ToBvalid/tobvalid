@@ -13,6 +13,7 @@ import seaborn as sns
 from math import sqrt, log, exp, pi
 import embase as embase
 import pandas as pd
+import scipy.optimize as sco
 
 class Gaussian(embase.Distribution):
     "Model univariate Gaussian"
@@ -27,6 +28,13 @@ class Gaussian(embase.Distribution):
         u = (datum - self.mu) / abs(self.sigma)
         y = (1 / (sqrt(2 * pi) * abs(self.sigma))) * exp(-u * u / 2)
         return y
+    
+    def dpdf(self, datum):
+        "Probability of a data point given the current parameters"
+        u = (datum - self.mu) / abs(self.sigma)
+        y = (1 / (sqrt(2 * pi) * abs(self.sigma))) * exp(-u * u / 2)
+        return y*(self.mu - datum)/(self.sigma**2)
+    
 
     def cdf(self, datum):
         return 0.5*(1 + erf((datum - self.mu)/(sqrt(2)*self.sigma)))
@@ -103,43 +111,51 @@ def em(data, mode, max_iter = 100, x_tol = 0.01):
            pass
     return mix
 
-x = np.linspace(start=-10, stop=10, num=1000)
-df = pd.read_csv("../data/ph/3AZI_out.txt")
-data = df.x
+#x = np.linspace(start=-10, stop=10, num=1000)
+#df = pd.read_csv("../data/ph/5EED_out.txt")
+#data = df.x
+#
+#
+#
+#
+#import time
+#start = time.time() 
+#mode = 2
+#best_mix = em(data, mode, max_iter = 200)
+#end = time.time()
+#
+#print(end - start)
+#
+##print(best_mix)
+##print([sum(z) for z in best_mix.z])
+##print([np.mean(z) for z in best_mix.z])
+##print([np.median(z) for z in best_mix.z])
+##print([np.var(z) for z in best_mix.z])
+##print(np.mean(data))
+#
+#
+#
+#
+##
+###mixture
+#x = np.linspace(start=min(data), stop=max(data), num=1000)
+#sns.distplot(data, bins=100, kde=False, norm_hist=True)
+#dists = [[best_mix.mix[i]*best_mix.dist[i].pdf(e) for e in x]  for i in range(mode)]
+#all_dist = [best_mix.pdf(e) for e in x]
+#
+#for i in range(mode):
+#    plt.plot(x, dists[i], label=str(i + 1))
+#
+#plt.plot(x, all_dist, label='gaussian mixture')
+#plt.legend()
+##
+#
+#result = st.kstest(data, best_mix.cdf)
+#print(result)
+#
+#
+##print(st.kstest(data, best_mix.cdf))
+#
+#print([sco.minimize(lambda x: -best_mix.pdf(x), [best_mix.dist[i].mu], method="CG", jac=lambda x: -best_mix.dpdf(x)).x for i in range(mode)] )
 
-
-
-import time
-start = time.time()  
-best_mix = em(data, 2, max_iter = 2)
-end = time.time()
-
-print(end - start)
-
-print(best_mix)
-print([sum(z) for z in best_mix.z])
-print([np.mean(z) for z in best_mix.z])
-print([np.median(z) for z in best_mix.z])
-print([np.var(z) for z in best_mix.z])
-print(np.mean(data))
-
-
-
-
-#mixture
-x = np.linspace(start=min(data), stop=max(data), num=1000)
-sns.distplot(data, bins=20, kde=False, norm_hist=True)
-g_both = [best_mix.pdf(e) for e in x]
-plt.plot(x, g_both, label='gaussian mixture')
-plt.legend()
-
-histo, bin_edges = np.histogram(data, bins='auto', density =False)
-number_of_bins = len(bin_edges) - 1
-observed_values = histo
-cdf = best_mix.cdf(bin_edges)
-expected_values = len(data) * np.diff(cdf)
-result = st.ks_2samp(observed_values, expected_values)
-print(result)
-
-print(st.kstest(data, best_mix.cdf))
 

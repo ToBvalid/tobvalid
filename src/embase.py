@@ -37,6 +37,9 @@ class Mixture:
     def pdf(self, x):
         return sum([w*d.pdf(x) for (w, d) in zip (self.mix, self.dist)])
     
+    def dpdf(self, x):
+        return sum([w*d.dpdf(x) for (w, d) in zip (self.mix, self.dist)])
+    
     def cdf(self, x):
         return sum([w*d.cdf(x) for (w, d) in zip (self.mix, self.dist)])
 
