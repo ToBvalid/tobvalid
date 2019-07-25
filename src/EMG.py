@@ -97,7 +97,7 @@ class GaussianMixture(embase.Mixture):
 
 
 
-def em(data, mode, max_iter = 100, x_tol = 0.01):
+def gmm(data, mode, max_iter = 100, x_tol = 0.01):
     # Find best Mixture Gaussian model
     last_loglike = float('-inf')
     mix = GaussianMixture(data, mode)
@@ -111,16 +111,32 @@ def em(data, mode, max_iter = 100, x_tol = 0.01):
            pass
     return mix
 
+
+def modes(data, max_iter = 100, x_tol = 0.01):
+    # Find best Mixture Gaussian model
+    mode = 2
+    while True:
+        try:
+            best_mix = gmm(data, mode, max_iter, x_tol)
+            modes = np.unique(np.array([sco.minimize(lambda x: -best_mix.pdf(x), [best_mix.dist[i].mu], method="CG", jac=lambda x: -best_mix.dpdf(x)).x for i in range(mode)]).flatten().round(2))
+            if(modes.size < mode):
+                break
+            mode = mode + 1
+        except (ZeroDivisionError, ValueError, RuntimeWarning):
+            break
+    return mode - 1 
+    
 #x = np.linspace(start=-10, stop=10, num=1000)
-#df = pd.read_csv("../data/ph/5EED_out.txt")
+#df = pd.read_csv("../data/ph/1F17_out.txt")
 #data = df.x
 #
-#
-#
-#
+#print(modes(data))
+
+
+
 #import time
 #start = time.time() 
-#mode = 2
+#mode = 3
 #best_mix = em(data, mode, max_iter = 200)
 #end = time.time()
 #
