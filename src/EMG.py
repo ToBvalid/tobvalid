@@ -5,10 +5,8 @@ Created on Thu Jul 11 19:04:37 2019
 @author: KavehB
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import erf
-import seaborn as sns
 from math import sqrt, log, exp, pi
 import embase as embase
 import scipy.optimize as sco
@@ -39,6 +37,14 @@ class Gaussian(embase.Distribution):
     #printing model values
     def __repr__(self):
         return 'Gaussian({0:4.6}, {1:4.6})'.format(self.mu, self.sigma)
+    
+    def size(self):
+        return 2
+    def setParams(self, params):
+        self.mu = params[0]
+        self.sigma = params[1]
+    def getParams(self):
+        return [self.mu, self.sigma]
 
 
 class GaussianMixture(embase.Mixture):
@@ -101,9 +107,12 @@ def gmm(data, mode, max_iter = 100, x_tol = 0.01):
     # Find best Mixture Gaussian model
     last_loglike = float('-inf')
     mix = GaussianMixture(data, mode)
+    best_mix = mix
     for i in range(max_iter):
         try:
             mix.iterate()
+            if(last_loglike > mix.loglike):
+                return best_mix
             if abs((last_loglike - mix.loglike)/mix.loglike) < x_tol:
                 return mix
             last_loglike = mix.loglike
@@ -125,80 +134,5 @@ def modes(data, max_iter = 100, x_tol = 0.01):
         except (ZeroDivisionError, ValueError, RuntimeWarning):
             break
     return mode - 1 
-
-import pandas as pd    
-x = np.linspace(start=-10, stop=10, num=1000)
-df = pd.read_csv("../data/ph/1RXM_out.txt")
-data = df.x
-#
-#print(modes(data))
-#
-#
-#
-#import time
-#start = time.time() 
-#mode = 2
-#nmodes = 2
-#best_mix = gmm(data, nmodes, max_iter = 200)
-#z = best_mix.z
-#for i in range(nmodes):
-#    a = np.transpose(np.array([data, z[i]]))
-#    sa = a[a[:,0].argsort()]
-#    plt.plot(sa[:, 0], sa[:, 1], label=str(i + 1) + 'z')
-#
-#x1 = np.linspace(start=min(data), stop=max(data), num=1000)
-#sns.distplot(data, bins=20, kde=False, norm_hist=True)
-#dists = [[best_mix.mix[i]*best_mix.dist[i].pdf(e) for e in x1]  for i in range(nmodes)]
-##all_dist = [gmmres.pdf(e) for e in x2]
-#for i in range(nmodes):
-#    plt.plot(x1, dists[i], label=str(i + 1))
-##plt.plot(x1, all_dist, label='Inverse Gamma mixture')
-#plt.legend()
-
-
-#end = time.time()
-#
-#print(best_mix)
-##
-##print(end - start)
-##
-##print(len(data))
-#
-##print([len([z for z in x if z < 0.1]) for x in best_mix.z] )
-#
-#z = np.array(best_mix.z)
-#print([sum(x)for x in z])
-##
-##print(best_mix)
-##print([sum(z) for z in best_mix.z])
-##print([np.mean(z) for z in best_mix.z])
-##print([np.median(z) for z in best_mix.z])
-##print([np.var(z) for z in best_mix.z])
-##print(np.mean(data))
-#
-#
-#
-#
-##
-###mixture
-# x = np.linspace(start=min(data), stop=max(data), num=1000)
-# sns.distplot(data, bins=100, kde=False, norm_hist=True)
-# dists = [[best_mix.mix[i]*best_mix.dist[i].pdf(e) for e in x]  for i in range(mode)]
-# all_dist = [best_mix.pdf(e) for e in x]
-
-# for i in range(mode):
-#     plt.plot(x, dists[i], label=str(i + 1))
-
-# plt.plot(x, all_dist, label='gaussian mixture')
-# plt.legend()
-##
-#
-#result = st.kstest(data, best_mix.cdf)
-#print(result)
-#
-#
-##print(st.kstest(data, best_mix.cdf))
-#
-#print([sco.minimize(lambda x: -best_mix.pdf(x), [best_mix.dist[i].mu], method="CG", jac=lambda x: -best_mix.dpdf(x)).x for i in range(mode)] )
 
 

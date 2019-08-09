@@ -43,10 +43,12 @@ def gemmy_parse(file):
                     atoms.append(atom)
                 else: continue 
     # The array named B gives you B factors of all atoms of the structure
-    B = np.asarray(B) 
+    B = np.asarray(B)
+    s=st.resolution
+    return (s, B)
     
-    
-#myprot = "/path/to/the/file/xxxx.pdb"
+ 
+#myprot = "../data/pdb/1BDQ_out.pdb"
 #st = gemmi.read_structure(myprot)
 ## s  IS RESOLUTION
 #s=st.resolution

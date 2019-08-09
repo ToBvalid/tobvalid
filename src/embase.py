@@ -4,6 +4,7 @@ Created on Thu Jul 11 19:07:34 2019
 
 @author: KavehB
 """
+import numpy as np
 
 class Distribution:
     def pdf(self, x):
@@ -12,13 +13,19 @@ class Distribution:
         pass
     def __repr__(self):
         pass
+    def size(self):
+        pass
+    def setParams(self, params):
+        pass
+    def getParams(self):
+        pass
 
 class Mixture:
     def __init__(self, data, n):
         self.mode = n
-        self.data = data
+        self.data = np.array(data)
         self.loglike = 0.
-        self.mix = [1/self.mode]*self.mode
+        self.mix = np.array([1/self.mode]*self.mode)
 
         pass
 
