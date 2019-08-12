@@ -55,8 +55,9 @@ class InverseGammaMixture(embase.Mixture):
         self.z = z
         self.useMin = useMin
         
-#        if mix.all() != None:
-#            self.mix = mix
+        if mix is not None:
+            self.mix = mix
+        
         if gm != None:
             self.init3(gm)
         elif not (initial is None):
@@ -121,28 +122,13 @@ class InverseGammaMixture(embase.Mixture):
         self.initBetta = [(bm - b)*(a + 1) for (bm, b, a) in zip(modes, self.initShift, self.initAlpha)]
         
     def init5(self, initial):
-        self.initShift = initial[1]
+        self.initShift = initial[2]
         self.initAlpha = initial[0]
-        self.initBetta = initial[2]
+        self.initBetta = initial[1]
   
         
     def Estep(self):
         "Perform an E(stimation)-step, freshening up self.loglike in the process"
-        # compute weights
-#        sums = [sum([ m1*d1.pdf(datum) for (m1, d1) in zip(self.mix, self.dist)]) for datum in self.data]
-#        
-#        
-#
-#        wps = [[m*d.pdf(datum) for (m, d) in zip(self.mix, self.dist)] for datum in self.data]
-#        for i in range(len(wps)):
-#            for j in range(len(wps[i])):
-#                if wps[i][j] != 0:
-#                    wps[i][j] = wps[i][j]/sums[i]
-#                
-#                    
-#        self.weights = list(zip(* wps))
-#        self.N = [sum(w) for w in self.weights]
-#        self.mix = [n/sum(self.N)  for n in self.N]
         
         pdfs = [np.vectorize(d.pdf) for d in self.dist]
         values = np.array([f(self.data) for f in pdfs])  
@@ -161,7 +147,6 @@ class InverseGammaMixture(embase.Mixture):
 
     def Mstep(self):
             "Perform an M(aximization)-step"            
-            result = []
             
 
             self.CalcFisherMatrix()
@@ -194,8 +179,7 @@ class InverseGammaMixture(embase.Mixture):
                             self.dist[i].shift = ishift[i]
                         self.loglike = ifvalue
                     break
-            result.append(conv)
-            return result
+            return conv
       
     def CalcFisherMatrix(self):
         w = 1/self.sig**2 
@@ -218,9 +202,13 @@ class InverseGammaMixture(embase.Mixture):
             inverseSquareDelta = sum([z/(x**2) for (x, z)  in delta])
             inverseCubeDelta = sum([z/(x**3) for (x, z) in delta])
             
-           
-            self.fvalue[i] = - n*d.alpha*log(d.betta) + n*math.lgamma(d.alpha) + d.betta*weightedInverseDelta + (d.alpha + 1)*weightedLogDelta  + w*(d.alpha - self.al0)**2/2 
-            self.gradAlpha[i] = n*special.psi(d.alpha) - n*log(d.betta) + weightedLogDelta  + w*(d.alpha - self.al0)
+            
+            if i == 0:
+                self.fvalue[i] = - n*d.alpha*log(d.betta) + n*math.lgamma(d.alpha) + d.betta*weightedInverseDelta + (d.alpha + 1)*weightedLogDelta  + w*(d.alpha - self.al0)**2/2 
+                self.gradAlpha[i] = n*special.psi(d.alpha) - n*log(d.betta) + weightedLogDelta  + w*(d.alpha - self.al0)
+            else:   
+                self.fvalue[i] = - n*d.alpha*log(d.betta) + n*math.lgamma(d.alpha) + d.betta*weightedInverseDelta + (d.alpha + 1)*weightedLogDelta
+                self.gradAlpha[i] = n*special.psi(d.alpha) - n*log(d.betta) + weightedLogDelta
             self.gradBetta[i] = -n*d.alpha/d.betta + inverseDelta
             
             self.gradB[i] = d.betta*inverseSquareDelta - (d.alpha + 1)*inverseDelta                                                                                                                         
@@ -247,19 +235,7 @@ class InverseGammaMixture(embase.Mixture):
         
         
     def shiftcalc(self, tol = 1.0e-4):
-#        u, s, vh = np.linalg.svd(self.d2l)
-#        l1 = len(np.linalg.svd(self.d2l))
-#        ssinvd = [0, 0, 0] 
-#        mybul = s[0] * tol
-#        for j in range(0, l1):
-#            if s[j] > mybul:
-#                ssinvd[j] = 1/s[j]
-#                
-#        ssinv = np.mat(u) * np.mat(np.diag(ssinvd)) * np.mat(vh)
-#        shiftc = np.matmul(-ssinv, [self.gradA, self.gradBt, self.gradS])
-#        + tol*np.random.randn(3,3)
-
-        
+ 
         inv = np.linalg.inv(self.d2l + tol*np.random.randn(3*self.mode, 3*self.mode)) 
         grad = np.transpose(np.array([self.gradAlpha, self.gradBetta, self.gradB])).flatten()
         shiftc = np.matmul(-inv, grad)
@@ -267,7 +243,7 @@ class InverseGammaMixture(embase.Mixture):
             
     def iterate(self, N=1, verbose=False):
         self.Estep()
-        self.Mstep()
+        return self.Mstep()
         
     def __repr__(self):
         return ''.join(['InverseGammaMixture({0}, mix={1:.03}) '.format(self.dist[i], self.mix[i]) for i in range(self.mode)])
@@ -275,21 +251,65 @@ class InverseGammaMixture(embase.Mixture):
     def __str__(self):
         return ''.join(['InverseGammaMixture({0}, mix={1:.03}) '.format(self.dist[i], self.mix[i]) for i in range(self.mode)])
 
+    def logLike(self, i, alpha, betta, shift):
+         w = 1/self.sig**2        
+         n = self.N[i]
+         zj = self.weights[i]    
+         delta = [(x - shift, z) for (x, z) in zip(self.data, zj)  if(x > shift)]
+        
+         weightedLogDelta = sum([z*log(x) for (x, z) in delta])
+         weightedInverseDelta = sum([z/x for (x, z) in delta])
+         return -n*alpha*log(betta) + n*math.lgamma(alpha) + betta*weightedInverseDelta + (alpha + 1)*weightedLogDelta  + w*(alpha - self.al0)**2/2 
 
 
+    
+        
 
+def fullLogLike(data, mode, params, mx):
+    al0 = 3.5
+    w = 1/0.1**2 
+    mix = mx
+    dist = [InverseGammaDistribution(p[0], p[1], p[2]) for p in params]    
+    pdfs = [np.vectorize(d.pdf) for d in dist]
+    values = np.array([f(data) for f in pdfs])  
+    sums = mix@values
+    weights = np.diag(mix)@values
+   
+    for i in range(len(weights)):
+        for j in range(len(weights[i])):
+            if weights[i][j] != 0:
+                weights[i][j] = weights[i][j]/sums[j]
+        
+    fvalue = np.array([0]*mode)    
+    N = np.sum(weights, axis = 1)     
+    mix = N*(1/sum(N))     
+    for i in range(mode):   
+        d = dist[i]    
+        n = N[i]
+        zj = weights[i]    
+        delta = [(x - d.shift, z) for (x, z) in zip(data, zj)  if(x > d.shift)]
+        
+        weightedLogDelta = sum([z*log(x) for (x, z) in delta])
+        weightedInverseDelta = sum([z/x for (x, z) in delta])
+        fvalue[i] = - n*d.alpha*log(d.betta) + n*math.lgamma(d.alpha) + d.betta*weightedInverseDelta + (d.alpha + 1)*weightedLogDelta  + w*(d.alpha - al0)**2/2 
+            
+             
+
+    return sum([mix[i]*fvalue[i] for i in range(mode)])
+        
 def igmm(data, mode, z, z_tol = 0.1, max_iter = 100, x_tol = 0.0000001, step = 1, fisher = True, gm=None, modes = None, useMin = True, initial=None, mix=None):
     last_loglike = float('inf')
     mix = InverseGammaMixture(data, mode, z, z_tol, step = step, fisher = fisher, gm = gm, modes = modes, useMin=useMin, initial=initial, mix = mix)
     best_mix = mix
     for i in range(max_iter):
-        mix.iterate()
-        if(last_loglike < mix.loglike):
+        if not mix.iterate():
             return best_mix
+        if(last_loglike < mix.loglike):
+            best_mix = mix
         if abs((last_loglike - mix.loglike)/mix.loglike) < x_tol:
-            return mix
+            return best_mix
         last_loglike = mix.loglike
-    return mix
+    return best_mix
     
 
 #

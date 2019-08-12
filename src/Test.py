@@ -14,6 +14,7 @@ from scipy import stats
 from scipy import special
 from scipy.special import erf
 import scipy.stats as st
+import scipy as sp
 import seaborn as sns
 import EMG as gm
 import EMIG as igm
@@ -29,14 +30,14 @@ import gparser as gp
 
 
 
-(s, data) = gp.gemmy_parse("../data/pdb/5htf.pdb")
+(s, data) = gp.gemmy_parse("../data/pdb/1AON_out.pdb")
 p_data = ph.peak_height(data, s)
 
-plt.subplot(4, 2, 1)
-sns.distplot(data, bins=100, kde=False, norm_hist=True)
-
-plt.subplot(4, 2, 2)
-sns.distplot(p_data, bins=100, kde=False, norm_hist=True)
+#plt.subplot(4, 2, 1)
+#sns.distplot(data, bins=100, kde=False, norm_hist=True)
+#
+#plt.subplot(4, 2, 2)
+#sns.distplot(p_data, bins=100, kde=False, norm_hist=True)
 
 #nmodes = sv.boot_silverman(p_data, length = 1000)[0]
 #print(nmodes)
@@ -44,61 +45,91 @@ nmodes = 2
 gmmres =  gm.gmm(p_data, nmodes)
 z = gmmres.z
 
-plt.subplot(4, 2, 3)
-for i in range(nmodes):
-    a = np.transpose(np.array([p_data, z[i]]))
-    sa = a[a[:,0].argsort()]
-    plt.plot(sa[:, 0], sa[:, 1], label=str(i + 1) + 'z')
-
-x1 = np.linspace(start=min(p_data), stop=max(p_data), num=1000)
-sns.distplot(p_data, bins=100, kde=False, norm_hist=True)
-dists = [[gmmres.mix[i]*gmmres.dist[i].pdf(e) for e in x1]  for i in range(nmodes)]
-all_dist = [gmmres.pdf(e) for e in x1]
-plt.plot(x1, all_dist, label="PH Gaussian Mixture")
-for i in range(nmodes):
-    plt.plot(x1, dists[i], label=str(i + 1))
-plt.legend()
-
-
-best_gm = gm.gmm(data, nmodes, max_iter = 30, x_tol = 0.000000000001)
-print(best_gm)   
-
-plt.subplot(4, 2, 4)
-x2 = np.linspace(start=min(data), stop=max(data), num=1000)
-sns.distplot(data, bins=100, kde=False, norm_hist=True)
-dists = [[best_gm.mix[i]*best_gm.dist[i].pdf(e) for e in x2]  for i in range(nmodes)]
-all_dist = [best_gm.pdf(e) for e in x2]
-for i in range(nmodes):
-    plt.plot(x2, dists[i], label=str(i + 1))
-plt.plot(x2, all_dist, label='BF Gaussian mixture')
-plt.legend()
+#plt.subplot(4, 2, 3)
+#for i in range(nmodes):
+#    a = np.transpose(np.array([p_data, z[i]]))
+#    sa = a[a[:,0].argsort()]
+#    plt.plot(sa[:, 0], sa[:, 1], label=str(i + 1) + 'z')
+#
+#x1 = np.linspace(start=min(p_data), stop=max(p_data), num=1000)
+#sns.distplot(p_data, bins=100, kde=False, norm_hist=True)
+#dists = [[gmmres.mix[i]*gmmres.dist[i].pdf(e) for e in x1]  for i in range(nmodes)]
+#all_dist = [gmmres.pdf(e) for e in x1]
+#plt.plot(x1, all_dist, label="PH Gaussian Mixture")
+#for i in range(nmodes):
+#    plt.plot(x1, dists[i], label=str(i + 1))
+#plt.legend()
 
 
+#best_gm = gm.gmm(data, nmodes, max_iter = 30, x_tol = 0.000000000001)
+#print(best_gm)   
+
+#plt.subplot(4, 2, 4)
+#x2 = np.linspace(start=min(data), stop=max(data), num=1000)
+#sns.distplot(data, bins=100, kde=False, norm_hist=True)
+#dists = [[best_gm.mix[i]*best_gm.dist[i].pdf(e) for e in x2]  for i in range(nmodes)]
+#all_dist = [best_gm.pdf(e) for e in x2]
+#for i in range(nmodes):
+#    plt.plot(x2, dists[i], label=str(i + 1))
+#plt.plot(x2, all_dist, label='BF Gaussian mixture')
+#plt.legend()
+
+
+#best_gm.dist[0].mu
+#best_gm.dist[1].mu
+#best_gm.dist[0].sigma**2
+#best_gm.dist[1].sigma**2
+#
+#best_gm.dist[0].mu - 3*best_gm.dist[0].sigma
+#best_gm.dist[1].mu - 3*best_gm.dist[1].sigma
+
+
+#def calcInit(gm):
+#    return np.transpose(np.array([ [3.5, 2.5*3*d.sigma, d.mu - 3*d.sigma] for d in gm.dist]))
 
 import EMIG as igm
-igmix = igm.igmm(data,  2, gmmres.z[::-1], z_tol=0.9, max_iter=30,  x_tol=0.000000000001, step = 1, fisher = True)
+igmix = igm.igmm(data,  2, gmmres.z[::-1], z_tol=0.1, max_iter=30,  x_tol=0.000000000001, step = 1, fisher = True)
 print(igmix)
-          
-        
-plt.subplot(4, 2, 6)
+
+#plt.subplot(2, 1, 1)
 x3 = np.linspace(start=min(data), stop=max(data), num=1000)
 sns.distplot(data, bins=100, kde=False, norm_hist=True)
 iall_dist = [igmix.pdf(e) for e in x3]
-plt.plot(x3, iall_dist, label='Inverse Gamma mixture')
+plt.plot(x3, iall_dist, label='Inverse Gamma mixture')         
 
+   
+#igmix.logLike(1, 4.24208, 182.301, 88.9268) 
+#igmix.dist[0].shift
+#igmix.dist[1].shift
+#
+#igmix.dist[0].betta
+#igmix.dist[0].betta/(igmix.dist[0].alpha - 1) + igmix.dist[0].shift
+#
+#igmix.dist[1].betta/(igmix.dist[1].alpha - 1) + igmix.dist[1].shift
+#
+#(igmix.dist[0].betta**2)/(((igmix.dist[0].alpha - 1)**2)*(igmix.dist[0].alpha - 2))
+#
+#(igmix.dist[1].betta**2)/(((igmix.dist[1].alpha - 1)**2)*(igmix.dist[1].alpha - 2))
+#
+#igmix.dist[0].betta*(igmix.dist[0].alpha - 1)
+#igmix.dist[1].betta*(igmix.dist[1].alpha - 1)
+#
+#(igmix.dist[0].betta/(igmix.dist[0].alpha - 1)/3)**2
+#(igmix.dist[1].betta/(igmix.dist[1].alpha - 1)/3)**2
+#
+#
+#np.var(data)
 
-
-
-import EMM as emm
-emix = emm.emm(data, ["invgamma", "norm"],  gmmres.z[::-1], z_tol=0.9, max_iter=30,  x_tol=0.000000000001, step = 1)
-print(emix)         
-        
-plt.subplot(4, 2, 7)
-x4 = np.linspace(start=min(data), stop=max(data), num=1000)
-sns.distplot(data, bins=100, kde=False, norm_hist=True)
-
-eall_dist = [emix.pdf(e) for e in x4]
-plt.plot(x4, eall_dist, label='Inverse Gamma mixture')
+#import EMM as emm
+#emix = emm.emm(data, ["invgamma", "norm"],  gmmres.z[::-1], z_tol=0.01, max_iter=30,  x_tol=0.000000000001, step = 1)
+#print(emix)         
+#        
+#plt.subplot(2, 1, 2)
+#x4 = np.linspace(start=min(data), stop=max(data), num=1000)
+#sns.distplot(data, bins=100, kde=False, norm_hist=True)
+#
+#eall_dist = [emix.pdf(e) for e in x4]
+#plt.plot(x4, eall_dist, label='Inverse Gamma mixture')
 
 #
 #

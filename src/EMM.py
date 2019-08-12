@@ -29,8 +29,8 @@ class MixedMixture(embase.Mixture):
         self.dist = []
         self.sizes = []
         
-#        if mix.all() != None:
-#            self.mix = mix
+        if mix is not None:
+            self.mix = mix
 #            
         self.init()
     
@@ -89,7 +89,6 @@ class MixedMixture(embase.Mixture):
 
     def Mstep(self):
             "Perform an M(aximization)-step"            
-            result = []
             
             self.CalcFisherMatrix()
             ss = self.shiftcalc(self.epsilon)
@@ -130,8 +129,7 @@ class MixedMixture(embase.Mixture):
                         self.loglike = ifvalue
                     break
 
-            result.append(conv)
-            return result
+            return conv
     
     def CalcFisherMatrixIG(self, i):
         w = 1/self.sig**2 
@@ -210,7 +208,7 @@ class MixedMixture(embase.Mixture):
             
     def iterate(self, N=1, verbose=False):
         self.Estep()
-        self.Mstep()
+        return self.Mstep()
         
     def __repr__(self):
         return ''.join(['InverseGammaMixture({0}, mix={1:.03}) '.format(self.dist[i], self.mix[i]) for i in range(self.mode)])
@@ -223,13 +221,14 @@ def emm(data, names, z, z_tol = 0.1, step = 1, fisher = True, mix=None, max_iter
     mix = MixedMixture(data, names, z, c = z_tol, step = step, fisher = fisher, mix = mix)
     best_mix = mix
     for i in range(max_iter):
-        mix.iterate()
-        if(last_loglike < mix.loglike):
+        if not mix.iterate():
             return best_mix
+        if(last_loglike < mix.loglike):
+            best_mix = mix
         if abs((last_loglike - mix.loglike)/mix.loglike) < x_tol:
-            return mix
+            return best_mix
         last_loglike = mix.loglike
-    return mix    
+    return best_mix  
 
 
 
