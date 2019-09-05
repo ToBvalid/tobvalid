@@ -30,7 +30,7 @@ import gparser as gp
 
 
 
-(s, data) = gp.gemmy_parse("../data/pdb/1AON_out.pdb")
+(s, data) = gp.gemmy_parse("../data/pdb/4BB7_out.pdb")
 p_data = ph.peak_height(data, s)
 
 #plt.subplot(4, 2, 1)
@@ -41,24 +41,31 @@ p_data = ph.peak_height(data, s)
 
 #nmodes = sv.boot_silverman(p_data, length = 1000)[0]
 #print(nmodes)
+import time
+start = time.time()
 nmodes = 2
-gmmres =  gm.gmm(p_data, nmodes)
+gmmres =  gm.emgmm(p_data, nmodes)
+
+end = time.time()
+print(end - start)
+print(gmmres.mixture)
 z = gmmres.z
 
-#plt.subplot(4, 2, 3)
-#for i in range(nmodes):
-#    a = np.transpose(np.array([p_data, z[i]]))
-#    sa = a[a[:,0].argsort()]
-#    plt.plot(sa[:, 0], sa[:, 1], label=str(i + 1) + 'z')
-#
-#x1 = np.linspace(start=min(p_data), stop=max(p_data), num=1000)
-#sns.distplot(p_data, bins=100, kde=False, norm_hist=True)
-#dists = [[gmmres.mix[i]*gmmres.dist[i].pdf(e) for e in x1]  for i in range(nmodes)]
-#all_dist = [gmmres.pdf(e) for e in x1]
-#plt.plot(x1, all_dist, label="PH Gaussian Mixture")
-#for i in range(nmodes):
-#    plt.plot(x1, dists[i], label=str(i + 1))
-#plt.legend()
+plt.figure()
+for i in range(nmodes):
+    a = np.transpose(np.array([p_data, z[i]]))
+    sa = a[a[:,0].argsort()]
+    plt.plot(sa[:, 0], sa[:, 1], label=str(i + 1) + 'z')
+
+p_x = np.linspace(start=min(p_data), stop=max(p_data), num=1000)
+sns.distplot(p_data, bins=100, kde=False, norm_hist=True)
+dists = [np.vectorize(gmmres.mixture.pdf) for d in gmmres.mixture.dist]
+dvalues = np.array([d(p_x) for d in dists])
+mvalues = np.sum(np.multiply(dvalues.T, gmmres.mixture.mix), axis = 1).T
+plt.plot(p_x, mvalues, label="PH Gaussian Mixture")
+for i in range(nmodes):
+    plt.plot(p_x, dvalues[i], label=str(i + 1))
+plt.legend()
 
 
 #best_gm = gm.gmm(data, nmodes, max_iter = 30, x_tol = 0.000000000001)
@@ -88,10 +95,10 @@ z = gmmres.z
 #    return np.transpose(np.array([ [3.5, 2.5*3*d.sigma, d.mu - 3*d.sigma] for d in gm.dist]))
 
 import EMIG as igm
-igmix = igm.igmm(data,  2, gmmres.z[::-1], z_tol=0.1, max_iter=30,  x_tol=0.000000000001, step = 1, fisher = True)
+igmix = igm.igmm(data,  nmodes, gmmres.z[::-1], z_tol=0.1, max_iter=30,  x_tol=0.000000000001, step = 1, fisher = True)
 print(igmix)
 
-#plt.subplot(2, 1, 1)
+plt.figure()
 x3 = np.linspace(start=min(data), stop=max(data), num=1000)
 sns.distplot(data, bins=100, kde=False, norm_hist=True)
 iall_dist = [igmix.pdf(e) for e in x3]
