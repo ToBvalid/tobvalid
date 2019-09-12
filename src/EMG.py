@@ -97,7 +97,8 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
     
     
     last_loglike = float('-inf')
-  
+    dist = np.vectorize(pdf)
+    
     best_mix =   GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":1, "success":False, "z":None})
     for i in np.arange(max_iter):
 #        try:
@@ -105,24 +106,24 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
         #E Step
         
                 
-        dist = np.vectorize(pdf)
+
         values = dist(np.repeat(data[np.newaxis,...], mode, axis=0).T, mu, sigma).T
-        wp = np.multiply(values.T, mix)
+        wp = values.T*mix
         den = np.sum(wp, axis = 1)
-        z = np.multiply(wp.T, np.reciprocal(den, dtype=float))
+        z = wp.T*np.reciprocal(den, dtype=float)
        
         #M Step
         N = np.sum(z, axis = 1)
         
-        mu = np.sum(np.multiply(np.multiply(z, d).T ,  np.reciprocal(N, dtype=float)), axis = 0 )
+        mu = np.sum((z* d).T *np.reciprocal(N, dtype=float), axis = 0 )
        
         diff = np.repeat(data[np.newaxis,...], mode, axis=0).T  - mu  
-        diffSquare = np.multiply(diff, diff)
-        wdiffSquare = np.multiply(z.T, diffSquare)
-        sigma = np.sqrt(np.sum(np.multiply(wdiffSquare, np.reciprocal(N, dtype=float)), axis = 0 ))
+        diffSquare = diff*diff
+        wdiffSquare = z.T*diffSquare
+        sigma = np.sqrt(np.sum(wdiffSquare*np.reciprocal(N, dtype=float), axis = 0 ))
         mix = N*(1./np.sum(N))
         
-#        loglike = (-0.5)*np.sum(np.sum(np.multiply(wdiffSquare, np.reciprocal(sigma**2, dtype = float)) + np.multiply(z.T, np.log(sigma**2)), axis = 0 )) 
+#        loglike = (-0.5)*np.sum(np.sum(wdiffSquare*np.reciprocal(sigma**2, dtype = float) + z.T*np.log(sigma**2), axis = 0 )) 
         loglike = -np.sum(np.log(wp))
         cur_mix =   GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":i+1, "success":True, "z":z})
         if(last_loglike > loglike):
@@ -136,6 +137,3 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
    
     return GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":max_iter, "success":True, "z":z})
 
-#dist = np.vectorize(pdf)
-#x = np.arange(10)
-#values = dist(np.repeat(x[np.newaxis,...], 2, axis=0).T, [1, 1], [1, 2]).T

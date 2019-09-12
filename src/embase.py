@@ -25,8 +25,8 @@ class Mixture:
         self.mode = n
         self.data = np.array(data)
         self.loglike = 0.
-        self.mix = np.array([1/self.mode]*self.mode)
-
+        self.mix = np.array([1./self.mode]*self.mode)
+        self.dist = None
         pass
 
     "Initialize distributuions"
