@@ -80,13 +80,15 @@ class GaussianMixture():
 
 def pdf(datum, mu, sigma):
     "Probability of a data point given the current parameters"
-    u = (datum - mu) / abs(sigma)
-    y = (1 / (np.sqrt(2 * np.pi) * abs(sigma))) * np.exp(-u * u / 2)
+    u = (datum - mu) / np.abs(sigma)
+    y = (1 / (np.sqrt(2 * np.pi) * np.abs(sigma))) * np.exp(-u * u / 2)
     return y
-    
-def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
+
+   
+def emgmm(d, mode, max_iter = 100, x_tol = 0.001):
     # Initialization
     data = np.array(d)
+    datan = np.repeat(data[np.newaxis,...], mode, axis=0).T
     loglike = 0.
     mix = np.array([1./mode]*mode)
     dist = None
@@ -101,13 +103,10 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
     
     best_mix =   GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":1, "success":False, "z":None})
     for i in np.arange(max_iter):
-#        try:
         
         #E Step
         
-                
-
-        values = dist(np.repeat(data[np.newaxis,...], mode, axis=0).T, mu, sigma).T
+        values =  dist(datan, mu, sigma).T
         wp = values.T*mix
         den = np.sum(wp, axis = 1)
         z = wp.T*np.reciprocal(den, dtype=float)
@@ -117,7 +116,7 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
         
         mu = np.sum((z* d).T *np.reciprocal(N, dtype=float), axis = 0 )
        
-        diff = np.repeat(data[np.newaxis,...], mode, axis=0).T  - mu  
+        diff = datan  - mu  
         diffSquare = diff*diff
         wdiffSquare = z.T*diffSquare
         sigma = np.sqrt(np.sum(wdiffSquare*np.reciprocal(N, dtype=float), axis = 0 ))
@@ -128,12 +127,43 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.01):
         cur_mix =   GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":i+1, "success":True, "z":z})
         if(last_loglike > loglike):
             best_mix
-        if abs((last_loglike - loglike)/loglike) < x_tol:
+        if np.abs((last_loglike - loglike)/loglike) < x_tol:
             return cur_mix
         best_mix = cur_mix
         last_loglike = loglike
-#        except (ZeroDivisionError, ValueError, RuntimeWarning): # Catch division errors from bad starts, and just throw them out...
-#            pass
+
    
     return GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":max_iter, "success":True, "z":z})
 
+def gmm_modes(d, max_iter = 100, x_tol = 0.001, mod_tol = 0.2, mix_tol = 0.1, peak_tol = 0.9, ret_mix = False):
+#    lastres = emgmm(d, 1, max_iter, x_tol)
+    lastres = None
+    mode = 2
+    while (True):
+        gmmres = emgmm(d, mode, max_iter, x_tol)
+
+        if ((gmmres.mixture.mix < mix_tol).any()):
+            break
+        z = gmmres.z
+        it = 0
+        for i in np.arange(mode - 1):
+            z1 = z[i].sum()
+            z2 = z[i + 1].sum()
+            z12 = z[i, z[i] <= z[i + 1]].sum() + z[i + 1, z[i] >= z[i + 1]].sum()
+            if (2*z12/(z1 + z2) >= mod_tol):
+                break
+            peak1 = gmmres.mixture.mix[i]/(np.sqrt(2*np.pi)*gmmres.mixture.dist[i].sigma)
+            peak2 = gmmres.mixture.mix[i + 1]/(np.sqrt(2*np.pi)*gmmres.mixture.dist[i + 1].sigma)
+            if(abs(gmmres.mixture.dist[i + 1].mu - gmmres.mixture.dist[i].mu) < 1*(gmmres.mixture.dist[i + 1].sigma + gmmres.mixture.dist[i].sigma) 
+                and min(peak1, peak2)/max(peak1, peak2) > peak_tol):
+                break
+            it += 1
+        if(it < mode - 1):
+            break
+        lastres = gmmres
+        mode += 1
+    if(ret_mix == False):
+        return mode - 1
+    if( mode == 2):
+        return (mode - 1, emgmm(d, 1, max_iter, x_tol))
+    return (mode - 1, lastres)
