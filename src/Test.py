@@ -28,29 +28,31 @@ import bparser as bp
 import pandas as pd
 import gparser as gp
 import time
+np.__version__
 
-
-#(s, data) = gp.gemmy_parse("../data/pdb/2PAN_out.pdb")
+#(s, data) = gp.gemmy_parse("../data/pdb/4jr9.pdb")
 #p_data = ph.peak_height(data, s)
 #
-#df = pd.read_csv("../data/ph/5EED_out.txt")
-#p_data = df.x.values
+###df = pd.read_csv("../data/ph/5EED_out.txt")
+###p_data = df.x.values
 #print("Length: {}".format(str(len(p_data))))
-
+#
 #plt.figure()
 #sns.distplot(data, bins=30, kde=False, norm_hist=True)
-
-
-
-    
+#
+#plt.figure()
+#sns.distplot(p_data, bins=30, kde=False, norm_hist=True)
+#
+#    
 #start = time.time()
 # 
-#res =  gm.gmm_modes(p_data)
+#res =  gm.gmm_modes(p_data, ret_mix=True, max_iter=40)
 #nmodes = res[0]
 #gmmres =  res[1]
 #end = time.time()
 #print("time: {}".format(end - start))
 #print(gmmres.mixture)
+#print(gmmres.nit)
 #z = gmmres.z
 #
 #N = np.sum(z, axis =1)
@@ -79,7 +81,7 @@ in_dir = "../data/pdb"
 files = sv.get_files(in_dir)
 for file in files:
     (s, data) = gp.gemmy_parse(in_dir + "/" + file)
-    if(len(data) < 1000 or len(data) > 3000):
+    if(len(data) < 1000):
         continue
     p_data = ph.peak_height(data, s)
     start = time.time()
@@ -93,7 +95,7 @@ for file in files:
     print("file {}, time: {} iter {} Length: {} modes {}".format(file, end - start, gmmres.nit, len(p_data), nmodes))
 #    print("file {}, modes {}".format(file, str(nmodes)))
     z = gmmres.z
-
+    print(gmmres.mixture)
     N = np.sum(z, axis =1)
     plt.figure()
     for i in range(nmodes):
