@@ -128,7 +128,7 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.001):
 
 #        if(last_loglike > loglike):
 #            return best_mix   
-        if (sigma < ((mu_max - mu_min)/1000)).any():
+        if (sigma < ((mu_max - mu_min)/100)).any():
             return best_mix    
         if np.abs((last_loglike - loglike)/loglike) < x_tol:
             return cur_mix

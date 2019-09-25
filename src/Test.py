@@ -30,11 +30,11 @@ import gparser as gp
 import time
 np.__version__
 
-#(s, data) = gp.gemmy_parse("../data/pdb/4jr9.pdb")
+#(s, data) = gp.gemmy_parse("../data/pdb/1OB1_out.pdb")
 #p_data = ph.peak_height(data, s)
-#
-###df = pd.read_csv("../data/ph/5EED_out.txt")
-###p_data = df.x.values
+
+#df = pd.read_csv("../data/ph/5EED_out.txt")
+#p_data = df.x.values
 #print("Length: {}".format(str(len(p_data))))
 #
 #plt.figure()
@@ -46,7 +46,7 @@ np.__version__
 #    
 #start = time.time()
 # 
-#res =  gm.gmm_modes(p_data, ret_mix=True, max_iter=40)
+#res =  gm.gmm_modes(p_data, ret_mix=True, max_iter=50)
 #nmodes = res[0]
 #gmmres =  res[1]
 #end = time.time()
