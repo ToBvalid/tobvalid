@@ -1,0 +1,173 @@
+HEADER    PROTEIN FIBRIL                          29-OCT-14   4RP6              
+TITLE      252-258)                                                             
+COMPND     252-258)
+REMARK   3
+REMARK   3 REFINEMENT.
+REMARK   3   PROGRAM     : REFMAC 5.8.0230  
+REMARK   3   AUTHORS     : MURSHUDOV,SKUBAK,LEBEDEV,PANNU,
+REMARK   3                 STEINER,NICHOLLS,WINN,LONG,VAGIN
+REMARK   3
+REMARK   3    REFINEMENT TARGET : MAXIMUM LIKELIHOOD
+REMARK   3
+REMARK   3  DATA USED IN REFINEMENT.
+REMARK   3   RESOLUTION RANGE HIGH (ANGSTROMS) :   1.70
+REMARK   3   RESOLUTION RANGE LOW  (ANGSTROMS) :  21.30
+REMARK   3   DATA CUTOFF            (SIGMA(F)) : NONE
+REMARK   3   COMPLETENESS FOR RANGE        (%) :  94.64
+REMARK   3   NUMBER OF REFLECTIONS             :     462
+REMARK   3
+REMARK   3  FIT TO DATA USED IN REFINEMENT.
+REMARK   3   CROSS-VALIDATION METHOD          : THROUGHOUT
+REMARK   3   FREE R VALUE TEST SET SELECTION  : RANDOM
+REMARK   3   R VALUE     (WORKING + TEST SET) : 0.14878
+REMARK   3   R VALUE            (WORKING SET) :  0.14571
+REMARK   3   FREE R VALUE                     :  0.17765
+REMARK   3   FREE R VALUE TEST SET SIZE   (%) :  9.8
+REMARK   3   FREE R VALUE TEST SET COUNT      :    50
+REMARK   3
+REMARK   3  FIT IN THE HIGHEST RESOLUTION BIN.
+REMARK   3   TOTAL NUMBER OF BINS USED           :      20
+REMARK   3   BIN RESOLUTION RANGE HIGH           :    1.703
+REMARK   3   BIN RESOLUTION RANGE LOW            :    1.746
+REMARK   3   REFLECTION IN BIN     (WORKING SET) :       24
+REMARK   3   BIN COMPLETENESS (WORKING+TEST) (%) :    61.90
+REMARK   3   BIN R VALUE           (WORKING SET) :    0.220
+REMARK   3   BIN FREE R VALUE SET COUNT          :        2
+REMARK   3   BIN FREE R VALUE                    :    0.240
+REMARK   3
+REMARK   3  NUMBER OF NON-HYDROGEN ATOMS USED IN REFINEMENT.
+REMARK   3   ALL ATOMS                :       61
+REMARK   3
+REMARK   3  B VALUES.
+REMARK   3   FROM WILSON PLOT           (A**2) : NULL
+REMARK   3   MEAN B VALUE      (OVERALL, A**2) :  14.607
+REMARK   3   OVERALL ANISOTROPIC B VALUE.
+REMARK   3    B11 (A**2) :    -0.24
+REMARK   3    B22 (A**2) :     0.29
+REMARK   3    B33 (A**2) :    -0.19
+REMARK   3    B12 (A**2) :    -0.09
+REMARK   3    B13 (A**2) :     0.26
+REMARK   3    B23 (A**2) :    -0.68
+REMARK   3
+REMARK   3  ESTIMATED OVERALL COORDINATE ERROR.
+REMARK   3   ESU BASED ON R VALUE                            (A):   0.138
+REMARK   3   ESU BASED ON FREE R VALUE                       (A):   0.116
+REMARK   3   ESU BASED ON MAXIMUM LIKELIHOOD                 (A):   0.081
+REMARK   3   ESU FOR B VALUES BASED ON MAXIMUM LIKELIHOOD (A**2):   2.690
+REMARK   3
+REMARK   3 CORRELATION COEFFICIENTS.
+REMARK   3   CORRELATION COEFFICIENT FO-FC      :   0.977
+REMARK   3   CORRELATION COEFFICIENT FO-FC FREE :   0.961
+REMARK   3
+REMARK   3  RMS DEVIATIONS FROM IDEAL VALUES        COUNT    RMS    WEIGHT
+REMARK   3   BOND LENGTHS REFINED ATOMS        (A):    61 ; 0.015 ; 0.014
+REMARK   3   BOND LENGTHS OTHERS               (A):    68 ; 0.002 ; 0.017
+REMARK   3   BOND ANGLES REFINED ATOMS   (DEGREES):    85 ; 1.371 ; 1.689
+REMARK   3   BOND ANGLES OTHERS          (DEGREES):   165 ; 0.662 ; 1.630
+REMARK   3   TORSION ANGLES, PERIOD 1    (DEGREES):     8 ; 9.356 ; 5.000
+REMARK   3   TORSION ANGLES, PERIOD 2    (DEGREES):     1 ;72.345 ;30.000
+REMARK   3   TORSION ANGLES, PERIOD 3    (DEGREES):    14 ;15.206 ;15.000
+REMARK   3   CHIRAL-CENTER RESTRAINTS       (A**3):    12 ; 0.066 ; 0.200
+REMARK   3   GENERAL PLANES REFINED ATOMS      (A):    57 ; 0.008 ; 0.020
+REMARK   3   GENERAL PLANES OTHERS             (A):     7 ; 0.000 ; 0.020
+REMARK   3
+REMARK   3  ISOTROPIC THERMAL FACTOR RESTRAINTS.     COUNT   RMS    WEIGHT
+REMARK   3   MAIN-CHAIN BOND REFINED ATOMS  (A**2):    29 ; 1.307 ; 1.292
+REMARK   3   MAIN-CHAIN BOND OTHER ATOMS    (A**2):    28 ; 1.186 ; 1.250
+REMARK   3   MAIN-CHAIN ANGLE REFINED ATOMS (A**2):    33 ; 2.223 ; 1.891
+REMARK   3   MAIN-CHAIN ANGLE OTHER ATOMS (A**2)  :    34 ; 2.246 ; 1.933
+REMARK   3   SIDE-CHAIN BOND REFINED ATOMS  (A**2):    32 ; 1.947 ; 1.629
+REMARK   3   SIDE-CHAIN BOND OTHER ATOMS  (A**2)  :    29 ; 1.287 ; 1.492
+REMARK   3   SIDE-CHAIN ANGLE OTHER ATOMS (A**2)  :    47 ; 3.003 ; 2.304
+REMARK   3   LONG RANGE B REFINED ATOMS (A**2)    :    48 ; 3.518 ;13.599
+REMARK   3   LONG RANGE B OTHER ATOMS (A**2)      :    49 ; 3.598 ;13.941
+REMARK   3
+REMARK   3  NCS RESTRAINTS STATISTICS
+REMARK   3   NUMBER OF NCS GROUPS : NULL
+REMARK   3
+REMARK   3  TWIN DETAILS
+REMARK   3   NUMBER OF TWIN DOMAINS  : NULL
+REMARK   3
+REMARK   3
+REMARK   3  TLS DETAILS
+REMARK   3   NUMBER OF TLS GROUPS  : NULL
+REMARK   3
+REMARK   3
+REMARK   3  BULK SOLVENT MODELLING.
+REMARK   3   METHOD USED :  MASK
+REMARK   3   PARAMETERS FOR MASK CALCULATION
+REMARK   3   VDW PROBE RADIUS   :   1.20
+REMARK   3   ION PROBE RADIUS   :   0.80
+REMARK   3   SHRINKAGE RADIUS   :   0.80
+REMARK   3
+REMARK   3  OTHER REFINEMENT REMARKS:
+REMARK   3  HYDROGENS HAVE BEEN ADDED IN THE RIDING POSITIONS
+REMARK   3  U VALUES      : REFINED INDIVIDUALLY
+REMARK   3
+CRYST1    4.811   12.599   21.340  86.59  89.29  79.15 P 1                      
+SCALE1      0.207857 -0.039846 -0.000241        0.00000                         
+SCALE2     -0.000000  0.080817 -0.004715        0.00000                         
+SCALE3      0.000000 -0.000000  0.046944        0.00000                         
+ATOM      1  N   LEU Z   1       0.105   1.140  -2.131  1.00 15.91           N
+ATOM      2  CA  LEU Z   1      -0.185   0.805  -0.727  1.00 14.34           C
+ATOM      3  CB  LEU Z   1       0.304  -0.614  -0.468  1.00 14.77           C
+ATOM      4  CG  LEU Z   1      -0.156  -1.272   0.814  1.00 16.15           C
+ATOM      5  CD1 LEU Z   1       0.218  -2.760   0.800  1.00 17.07           C
+ATOM      6  CD2 LEU Z   1       0.446  -0.587   2.020  1.00 16.90           C
+ATOM      7  C   LEU Z   1       0.529   1.836   0.147  1.00 13.98           C
+ATOM      8  O   LEU Z   1       1.766   1.923   0.128  1.00 15.00           O
+ATOM      9  N   THR Z   2      -0.244   2.604   0.891  1.00 11.64           N
+ATOM     10  CA  THR Z   2       0.266   3.719   1.626  1.00 11.56           C
+ATOM     11  CB  THR Z   2      -0.072   5.061   0.937  1.00 13.06           C
+ATOM     12  OG1 THR Z   2       0.503   5.156  -0.375  1.00 14.19           O
+ATOM     13  CG2 THR Z   2       0.407   6.242   1.745  1.00 13.60           C
+ATOM     14  C   THR Z   2      -0.387   3.683   2.992  1.00 10.25           C
+ATOM     15  O   THR Z   2      -1.599   3.536   3.068  1.00 10.30           O
+ATOM     16  N   ILE Z   3       0.427   3.745   4.041  1.00  9.52           N
+ATOM     17  CA  ILE Z   3      -0.009   3.801   5.435  1.00  9.40           C
+ATOM     18  CB  ILE Z   3       0.374   2.502   6.145  1.00  9.49           C
+ATOM     19  CG1 ILE Z   3      -0.195   1.287   5.425  1.00 10.25           C
+ATOM     20  CG2 ILE Z   3      -0.011   2.589   7.618  1.00 10.31           C
+ATOM     21  CD1 ILE Z   3       0.354  -0.048   5.920  1.00 11.51           C
+ATOM     22  C   ILE Z   3       0.656   5.009   6.111  1.00  8.97           C
+ATOM     23  O   ILE Z   3       1.888   5.172   6.058  1.00  8.70           O
+ATOM     24  N   ILE Z   4      -0.158   5.878   6.706  1.00  9.49           N
+ATOM     25  CA  ILE Z   4       0.315   7.055   7.404  1.00  9.50           C
+ATOM     26  CB  ILE Z   4       0.018   8.324   6.591  1.00 10.21           C
+ATOM     27  CG1 ILE Z   4       0.719   8.283   5.225  1.00 11.45           C
+ATOM     28  CG2 ILE Z   4       0.359   9.580   7.390  1.00 10.05           C
+ATOM     29  CD1 ILE Z   4       0.171   9.278   4.227  1.00 13.27           C
+ATOM     30  C   ILE Z   4      -0.369   7.122   8.763  1.00  9.66           C
+ATOM     31  O   ILE Z   4      -1.620   7.072   8.804  1.00  8.84           O
+ATOM     32  N   THR Z   5       0.398   7.351   9.823  1.00  9.61           N
+ATOM     33  CA  THR Z   5      -0.161   7.539  11.181  1.00 11.51           C
+ATOM     34  CB  THR Z   5       0.063   6.295  12.052  1.00 12.25           C
+ATOM     35  OG1 THR Z   5       1.426   6.175  12.432  1.00 14.84           O
+ATOM     36  CG2 THR Z   5      -0.356   5.004  11.400  1.00 12.35           C
+ATOM     37  C   THR Z   5       0.462   8.786  11.817  1.00 12.36           C
+ATOM     38  O   THR Z   5       1.679   8.933  11.776  1.00 12.26           O
+ATOM     39  N   LEU Z   6      -0.386   9.706  12.286  1.00 13.45           N
+ATOM     40  CA ALEU Z   6       0.015  10.944  12.974  0.50 14.89           C
+ATOM     41  CA BLEU Z   6       0.015  10.944  12.974  0.50 14.89           C
+ATOM     42  CB ALEU Z   6      -0.597  12.163  12.279  0.50 16.09           C
+ATOM     43  CB BLEU Z   6      -0.597  12.163  12.279  0.50 16.09           C
+ATOM     44  CG ALEU Z   6       0.271  12.850  11.232  0.50 17.84           C
+ATOM     45  CG BLEU Z   6       0.271  12.850  11.232  0.50 17.84           C
+ATOM     46  CD1 LEU Z   6       0.541  11.913  10.079  1.00 18.58           C
+ATOM     47  CD2 LEU Z   6      -0.391  14.128  10.743  1.00 18.68           C
+ATOM     48  C   LEU Z   6      -0.515  10.911  14.407  1.00 15.38           C
+ATOM     49  O   LEU Z   6      -1.718  10.569  14.624  1.00 14.44           O
+ATOM     50  N   GLU Z   7       0.335  11.306  15.353  1.00 16.76           N
+ATOM     51  CA  GLU Z   7      -0.093  11.684  16.700  1.00 20.46           C
+ATOM     52  CB  GLU Z   7      -0.080  10.494  17.656  1.00 22.97           C
+ATOM     53  CG  GLU Z   7       1.261   9.879  17.830  1.00 25.70           C
+ATOM     54  CD  GLU Z   7       1.184   8.605  18.637  1.00 29.17           C
+ATOM     55  OE1 GLU Z   7       0.965   8.701  19.845  1.00 29.10           O
+ATOM     56  OE2 GLU Z   7       1.312   7.541  18.041  1.00 35.85           O
+ATOM     57  C   GLU Z   7       0.791  12.840  17.210  1.00 23.56           C
+ATOM     58  O   GLU Z   7       1.812  13.258  16.552  1.00 22.79           O
+ATOM     59  OXT GLU Z   7       0.510  13.383  18.311  1.00 27.63           O
+TER      60      GLU Z   7
+HETATM   61  O   HOH Z 101      -2.663   7.875  14.695  1.00 15.47           O
+HETATM   62  O   HOH Z 102       1.625   3.909  14.094  1.00 34.50           O
+END
