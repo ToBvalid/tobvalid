@@ -122,12 +122,10 @@ def emgmm(d, mode, max_iter = 100, x_tol = 0.001):
         sigma = np.sqrt(np.sum(wdiffSquare*np.reciprocal(N, dtype=float), axis = 0 ))
         mix = N*(1./np.sum(N))
         
-#        loglike = (-0.5)*np.sum(np.sum(wdiffSquare*np.reciprocal(sigma**2, dtype = float) + z.T*np.log(sigma**2), axis = 0 )) 
+
         loglike = -np.sum(np.log(wp[wp > 1e-07]))
         cur_mix =   GMMResult({'loglike':loglike, "mixture":GaussianMixture(mu, sigma, mix), "nit":i+1, "success":True, "z":z})
 
-#        if(last_loglike > loglike):
-#            return best_mix   
         if (sigma < ((mu_max - mu_min)/100)).any():
             return best_mix    
         if np.abs((last_loglike - loglike)/loglike) < x_tol:
@@ -144,10 +142,12 @@ def gmm_modes(d, max_iter = 100, x_tol = 0.001, mod_tol = 0.2, mix_tol = 0.1, pe
     mode = 2
     while (True):
         gmmres = emgmm(d, mode, max_iter, x_tol)
-
+        z = gmmres.z
+         
         if ((gmmres.mixture.mix < mix_tol).any()):
             break
-        z = gmmres.z
+        if(min(z.sum(axis = 1)*gmmres.mixture.mix/d.size) < 0.1):
+            break
         it = 0
         for i in np.arange(mode - 1):
             z1 = z[i].sum()

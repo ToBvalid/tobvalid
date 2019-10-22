@@ -51,7 +51,7 @@ class InverseGammaMixture(embase.Mixture):
         self.al0 = 3.5
         self.sig = 0.1
         self.epsilon = 1.0e-16
-        super().__init__(data, n)
+        super(InverseGammaMixture, self).__init__(data, n)
         self.initShift = []
         self.step = step
         self.c = c
