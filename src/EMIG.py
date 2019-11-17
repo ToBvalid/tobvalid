@@ -4,7 +4,43 @@ import numpy as np
 from scipy import special
 import scipy.stats as st
 from math import log
+import copy 
 
+
+class IGMMResult(dict):
+    """ Represents the optimization result.
+    Attributes
+    ----------
+    mixture : InverseGammaMixture
+        The Inverse Gamma Mixture.  
+    success : bool
+        Whether or not the optimizer exited successfully.
+    loglike: float
+        Value of loglike function.
+    nit : int
+        Number of iterations performed by the optimizer.
+
+    """
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, list(self.keys()))) + 1
+            return '\n'.join([k.rjust(m) + ': ' + repr(v)
+                              for k, v in sorted(self.items())])
+        else:
+            return self.__class__.__name__ + "()"
+
+    def __dir__(self):
+        return list(self.keys())
+    
 class InverseGammaDistribution(embase.Distribution):
     "Model univariate Inverse Gamma Distribution"
     def __init__(self, alpha, betta, shift):
@@ -12,18 +48,19 @@ class InverseGammaDistribution(embase.Distribution):
         self.alpha = alpha
         self.betta = betta
         self.shift = shift
-        self.dist = getattr(st, 'invgamma')
+        self.refresh()
 
     #probability density function
     def pdf(self, x):
-        
-        if x <= self.shift:
-            return 0
-        if -self.betta / (x - self.shift) > 600:
-            return 0
-
-        y = ((x - self.shift)**(-self.alpha - 1)) * (self.betta**self.alpha) * math.exp(-self.betta / (x - self.shift)) / math.gamma(self.alpha) 
-        return y
+        return self.dist.pdf(x)
+#        if x <= self.shift:
+#            return 0
+#        if -self.betta / (x - self.shift) > 600:
+#            return 0
+#
+#        y = np.power((x - self.shift), (-self.alpha - 1)) * np.power(self.betta,self.alpha) * np.exp(-self.betta / (x - self.shift)) / special.gamma(self.alpha) 
+##        y = ((x - self.shift)**(-self.alpha - 1)) * (self.betta**self.alpha) * math.exp(-self.betta / (x - self.shift)) / math.gamma(self.alpha) 
+#        return y
 
     def cdf(self, datum):
         if datum <= self.shift:
@@ -38,7 +75,9 @@ class InverseGammaDistribution(embase.Distribution):
         self.betta = max(0.1,params[1])
         self.shift = params[2]
     def getParams(self):
-        return [self.alpha, self.betta, self.shift]        
+        return [self.alpha, self.betta, self.shift]
+    def refresh(self):
+        self.dist = st.invgamma(self.alpha, loc=self.shift, scale=self.betta)         
     #printing model values
     def __repr__(self):
         return 'InverseGamma({0:4.6}, {1:4.6}, {2:4.6})'.format(self.alpha, self.betta, self.shift)
@@ -62,7 +101,7 @@ class InverseGammaMixture(embase.Mixture):
 
         self.loglike = 0
 
-        
+
     def init(self):
         N = self.z.sum(axis = 1)  
         mdB = np.matmul(self.z, self.data.T)/N
@@ -76,11 +115,13 @@ class InverseGammaMixture(embase.Mixture):
     def Estep(self):
         "Perform an E(stimation)-step, freshening up self.loglike in the process"
 
-        pdfs = [np.vectorize(d.pdf) for d in self.dist]
-        values = np.array([f(self.data) for f in pdfs]) 
+#        print(self.dist[0].pdf(self.data))
+#        pdfs = [np.vectorize(d.pdf) for d in self.dist]
+        values = np.array([d.pdf(self.data) for d in self.dist])
+
         sums = np.matmul(self.mix, values)
-        wps = (values.T*self.mix).T
-   
+        wps  = np.matmul(np.diag(self.mix), values)
+        
         for i in range(len(wps)):
             for j in range(len(wps[i])):
                 if wps[i][j] != 0:
@@ -104,17 +145,19 @@ class InverseGammaMixture(embase.Mixture):
             ifvalue = self.loglike
             conv = False
             while not conv:
-                self.alpha = ialpha + step*ss[0]
-                self.betta = ibetta + step*ss[1]
+                self.alpha = np.maximum(ialpha + step*ss[0], np.array([0.1]*self.mode))
+                self.betta = np.maximum(ibetta + step*ss[1], np.array([0.1]*self.mode))
+#                self.alpha = ialpha + step*ss[0]
+#                self.betta = ibetta + step*ss[1]
                 self.shift = ishift + step*ss[2]       
 
-              
                 self.CalcFisherMatrix()
+                
                 if self.loglike > ifvalue:
                     step = step*0.7
                 else:
                     conv = True
-               
+                    break
                 if step <= self.epsilon: 
                     if not conv:
                         for i in range(self.mode):
@@ -127,11 +170,13 @@ class InverseGammaMixture(embase.Mixture):
                 self.dist[i].alpha = self.alpha[i]
                 self.dist[i].betta = self.betta[i]
                 self.dist[i].shift= self.shift[i]
-                
+                self.dist[i].refresh()
+    
             return conv
       
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [0]*(self.mode - 1)) 
+#        w = np.array([1/self.sig**2]*self.mode) 
         self.loglike = 0
         self.gradA = 0
         self.gradBt = 0
@@ -145,17 +190,20 @@ class InverseGammaMixture(embase.Mixture):
         
         self.gradB =   [0]*self.mode  
         self.d2f =  [0]*self.mode 
-        
         weightedLogDelta = np.zeros((self.mode))
         weightedInverseDelta = np.zeros((self.mode))
         inverseSquareDelta = np.zeros((self.mode))
+         
         for i in range(self.mode):   
 
             n = self.N[i]
+
             zj = self.weights[i]    
             idx = self.data > self.shift[i]
             delta = self.data[idx] - self.shift[i]
+            
             zj = zj[idx] 
+            
             weightedLogDelta[i] = np.dot(zj, np.log(delta))
             weightedInverseDelta[i] = np.sum(zj/delta)
             inverseSquareDelta[i] = np.sum(zj/delta**2)
@@ -163,25 +211,30 @@ class InverseGammaMixture(embase.Mixture):
             alpha = self.alpha[i]
             betta = self.betta[i]
             self.d2f[i] =  np.array([[n*special.polygamma(1, alpha) + w[0], -n/betta, -n*alpha/betta ],
-                         [-n/betta, n*alpha/betta**2, n*alpha*(alpha + 1)/betta**2],
-                      [-n*alpha/betta,  n*alpha*(alpha + 1)/betta**2,  n*alpha*(alpha + 1)*(alpha + 3)/betta**2]])
+                         [-n/betta, n*alpha/np.power(betta, 2), n*alpha*(alpha + 1)/np.power(betta, 2)],
+                      [-n*alpha/betta,  n*alpha*(alpha + 1)/np.power(betta, 2),  n*alpha*(alpha + 1)*(alpha + 3)/np.power(betta, 2)]])
+
+#            self.d2f[i] =  np.array([[n*special.polygamma(1, alpha) + w[0], -n/betta, -n*alpha/betta ],
+#                         [-n/betta, n*alpha/betta**2, n*alpha*(alpha + 1)/betta**2],
+#                      [-n*alpha/betta,  n*alpha*(alpha + 1)/betta**2,  n*alpha*(alpha + 1)*(alpha + 3)/betta**2]])
         
         self.gradAlpha = self.N*special.psi(self.alpha) - self.N*np.log(self.betta) + weightedLogDelta  + w*(self.alpha - self.al0)  
         self.gradBetta = -self.N*self.alpha/self.betta + weightedInverseDelta        
         self.gradB = self.betta*inverseSquareDelta - (self.alpha + 1)*weightedInverseDelta         
                  
-    
         self.loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta*weightedInverseDelta + (self.alpha + 1)*weightedLogDelta  + w*(self.alpha - self.al0)**2/2, self.mix)
         for i in range(self.mode):
             for j in range(3):
                 for k in range(3):
                     self.d2l[3*i + j, k + 3*i] =  self.mix[i]*self.d2f[i][j][k]
-    def shiftcalc(self, tol = 1.0e-4):
-        inv = np.linalg.inv(self.d2l + tol*np.random.randn(3*self.mode, 3*self.mode)) 
+                  
+    def shiftcalc(self, tol = 1.0e-5):
+
+        inv = np.linalg.inv(self.d2l + tol*np.random.randn(3*self.mode, 3*self.mode))
         grad = np.transpose(np.array([self.gradAlpha, self.gradBetta, self.gradB])).flatten()
         shiftc = np.matmul(-inv, grad)
         return shiftc.reshape((self.mode, 3)).T
-            
+
     def iterate(self, N=1, verbose=False):
         self.Estep()
         return self.Mstep()
@@ -210,15 +263,22 @@ class InverseGammaMixture(embase.Mixture):
         
 def igmm(data, mode, z, z_tol = 0.1, max_iter = 100, x_tol = 0.005):
     last_loglike = float('inf')
-    mix = InverseGammaMixture(data, mode, z, z_tol)
-    best_mix = mix
-    for i in range(max_iter):
-        if not mix.iterate():
-            return best_mix
-        if(last_loglike < mix.loglike):
-            best_mix = mix
-        if abs((last_loglike - mix.loglike)/mix.loglike) < x_tol:
-            return best_mix
-        last_loglike = mix.loglike
-    return best_mix
+    try:
+        mix = InverseGammaMixture(data, mode, z, z_tol)
+        best_mix =copy.deepcopy(mix) 
+        for i in range(max_iter):
+                if not mix.iterate():
+                    return IGMMResult({"mixture":best_mix, "nit":i, "success":False, "Reason":"M-Step didn't converge"})
+                if np.isnan(mix.mix).any() or np.isnan(mix.alpha).any() or np.isnan(mix.betta).any() or np.isnan(mix.shift).any():
+                    return IGMMResult({"mixture":best_mix, "nit":i, "success":False,  "Reason":"nan values"})
+                if (mix.mix < 0.001).any():
+                    return IGMMResult({"mixture":best_mix, "nit":i, "success":False, "Reason":"One of the mixtures is too small"})
+                best_mix = copy.deepcopy(mix) 
+        
+                if abs((last_loglike - mix.loglike)/mix.loglike) < x_tol:
+                    return IGMMResult({"mixture":best_mix, "nit":i, "success":True})
+                last_loglike = mix.loglike
+    except (ZeroDivisionError, ValueError): 
+        return IGMMResult({"mixture":best_mix, "nit":i, "success":False, "Reason":"Exception"})
+    return IGMMResult({"mixture":best_mix, "nit": max_iter, "success":False, "Reason":"EM didn't converge"})
 

@@ -1,0 +1,19 @@
+#------------------------------------------------------------
+#!/bin/bash
+#
+if [ $#	-­‐eq 0 ] ; then
+ echo "No argument is given"
+ echo
+ echo "Usage"
+ echo "$0 <name	of the pdb/mtz file>"
+exit 0
+fi
+#Simple refinement
+refmac5 xyzin ./$1/$1.pdb hklin ./$1/$1.mtz xyzout ./$1/$1_out.pdb hklout ./$1/$1_out.mtz << eof
+#refmac5 xyzin ./$1/$1.pdb hklin ./$1/$1.mtz xyzout ./$1/$1_out2.pdb hklout ./$1/$1_out2.mtz << eof
+#ncycle 30
+#Ncsr local
+#refinement sharpen 20
+end
+eof
+#------------------------------------------------------------------

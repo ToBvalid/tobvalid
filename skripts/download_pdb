@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# a script to download pdb 
+#-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐-­‐	 
+
+if [ $#	-­‐eq 0] ; then
+ echo "No argument is given"
+ echo
+ echo "Usage"
+ echo "$0 <name of the pdb entry>"
+ exit 0
+fi
+mkdir $1
+cd $1
+#aa="$(tr '[:lower:]' '[:upper:]' <<< "${1}")"
+#echo "$aa"
+wget http://files.rcsb.org/download/${1}.pdb.gz
+wget http://files.rcsb.org/download/${1}-sf.cif.gz
+gunzip *.gz
+cif2mtz hklin ${1}-sf.cif hklout ${1}.mtz << eof
+end
+eof
+cd ..
+#-----------------------------------------------------------------------------------------------------------
+
+  
