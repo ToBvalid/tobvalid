@@ -19,6 +19,8 @@ class BaseMixture:
         self.tol = tol
         self.max_iter = max_iter
         self._loglike = 0
+        self.mix = np.ones(self.n_modes)/self.n_modes
+        self.nit = 0
  
     def _check_initial_parameters(self, X):
         """Check values of the basic parameters.
@@ -47,6 +49,20 @@ class BaseMixture:
         pass
      
     def pdf(self, X):
+        if isinstance(X, (np.ndarray)):
+            return np.matmul(self._pdf(np.repeat(X[np.newaxis,...], self.n_modes, axis=0).T ), self.mix.T) 
+         
+        if isinstance(X, (int, float)):
+            return np.matmul(self._pdf(X), self.mix.T)
+        
+        if isinstance(X, (list, tuple)) and all(isinstance(x, (int, float)) for x in X):
+            return self.pdf(np.array(X))
+        
+
+        raise ValueError( "Expected numerical array or number, got {} instead.".format(X)) 
+         
+    
+    def _pdf(self, X):
         pass
 
     
@@ -55,29 +71,29 @@ class BaseMixture:
         self._check_parameters(X, **kwargs)
         
         self.data = X
-        self.mix = np.ones(self.n_modes)/self.n_modes
+        self.data_n = np.repeat(self.data[np.newaxis,...], self.n_modes, axis=0).T 
         
-        self._init_parameters(X, **kwargs)
+        self._init_parameters(**kwargs)
         
         self._converged_ = False
         
         lower_bound = -np.infty
-        
-        for n_iter in np.range(1, self.max_iter + 1):
+        self.nit = 0
+        for n_iter in np.arange(1, self.max_iter + 1):
            
             prev_lower_bound = lower_bound
-            self._e_step(X)
-            if not self._m_step(X):
+            self._e_step()
+            if not self._m_step():
                 break
             
             lower_bound = self._loglike
     
             change = lower_bound - prev_lower_bound
-    
-            if abs(change) < self.tol:
+
+            if n_iter > 1 and np.abs(change/prev_lower_bound) < self.tol:
                 self._converged_ = True
                 break
-                
+        self.nit = n_iter    
     def loglike(self):
         return self._loglike
     
@@ -93,21 +109,25 @@ class BaseMixture:
         if not X.dtype in [np.float32, np.float64]:
             raise ValueError( "Expected numerical ndarray, got {} instead.".format(X))
     
-    def _init_parameters(self, X, **kwargs):
+    def _init_parameters(self, **kwargs):
         pass
+    
         
+    
+    def _mix_values(self):   
+        values = self._pdf(self.data_n)
+        return values*self.mix
+    
     def _calc_posterior_z(self):
-        values = self.pdf(self.data)
-
-        sums = np.matmul(self.mix, values)
-        wps  = np.matmul(np.diag(self.mix), values)
+        wp = self._mix_values()
         
-        for i in np.arange(len(wps)):
-            for j in np.arange(len(wps[i])):
-                if wps[i][j] != 0:
-                    wps[i][j] = wps[i][j]/sums[j]
-            
-        self.Z = wps  
+        den = np.sum(wp, axis = 1)
+
+        for i in np.arange(len(wp)):
+            for j in np.arange(len(wp[i])):
+                if wp[i][j] != 0:
+                    wp[i][j] = wp[i][j]/den[i]            
+        self.Z = wp
         
     def _e_step(self):
         self._calc_posterior_z()
