@@ -5,13 +5,34 @@ Created on Mon Dec  9 18:50:40 2019
 @author: KavehB
 """
 
+from .report import Report, HTable, VTable, Text, Lines, Plot, Head
+
 class HTMLReport:
     
+    def save(self, report, path, name):
+        self.__open(path)
+        for element in report.items():
+            if isinstance(element, Head):
+                if element.one():
+                    self.__head1(element.head())
+                else:
+                    self.__head2(element.head())
+                    
+            elif isinstance(element, HTable):
+                self.__htable(element.columns(), element.data())
+          
+            elif isinstance(element, VTable):
+                    self.__vtable(element.columns(), element.data())
+                    
+            elif isinstance(element, Plot):
+                self.__image(element.figure(), element.head() + ".png")
+                
+        self.__close().__save(path + "/" + name + ".html")
        
-    def open(self, path):
-        self.dir = path
-        self._closed = False
-        self._html = '''<HTML>
+    def __open(self, path):
+        self.__dir = path
+        self.__closed = False
+        self.__html = '''<HTML>
                             <HEAD>
                                 <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1255" />
                             </HEAD>
@@ -48,93 +69,94 @@ class HTMLReport:
                                 }
                             </style>
                       '''                      
-    def head1(self, string):
-        if self._closed:
+    def __head1(self, string):
+        if self.__closed:
             return self
         
-        self._html = self._html + "<h1>" + string + "</h1>"
+        self.__html = self.__html + "<h1>" + string + "</h1>"
         return self
     
-    def head2(self, string):
-        if self._closed:
+    def __head2(self, string):
+        if self.__closed:
             return self
-        self._html = self._html + "<h2>" + string + "</h2>"
+        self.__html = self.__html + "<h2>" + string + "</h2>"
         return self
     
-    def image(self, pyplot, file):
-        if self._closed:
+    def __image(self, pyplot, file):
+        if self.__closed:
             return self
-        pyplot.savefig(self.dir + "/" + file)
-        self._html = self._html + '<br><img src="'+ file +'"><br>'
+        pyplot.savefig(self.__dir + "/" + file)
+        self.__html = self.__html + '<br><img src="'+ file +'"><br>'
         return self
     
-    def vtable(self, columns, data):
-        if self._closed:
+    def __vtable(self, columns, data):
+        if self.__closed:
             return self
-        self._table_init()
-        self._table_columns(columns)
+        self.__table_init()
+        self.__table_columns(columns)
              
         for row in data:
-            self._html = self._html + '<TR height="20" class="ROW0">\n'
+            self.__html = self.__html + '<TR height="20" class="ROW0">\n'
             for cell in row:
-                 self._html = self._html + '<TD NOWRAP="" class="DATASTR">' + str(cell) + '</TD>\n'
-            self._html = self._html +  '</TR>\n'
+                 self.__html = self.__html + '<TD NOWRAP="" class="DATASTR">' + str(cell) + '</TD>\n'
+            self.__html = self.__html +  '</TR>\n'
             
-        self._table_close()
+        self.__table_close()
+        return self
         
         
         return self
-    def htable(self, columns, data):
-        if self._closed:
+    def __htable(self, columns, data):
+        if self.__closed:
             return self
-        self._table_init()
-        self._table_columns(columns)
+        self.__table_init()
+        self.__table_columns(columns)
              
 
        
         for key, row in data.items():
-            self._html = self._html + '<TR height="20" class="ROW0">\n'
-            self._html = self._html + '<TD NOWRAP="" class="HDR">' + key + '</TD>\n'
+            self.__html = self.__html + '<TR height="20" class="ROW0">\n'
+            self.__html = self.__html + '<TD NOWRAP="" class="HDR">' + key + '</TD>\n'
             for cell in row:
-                 self._html = self._html + '<TD NOWRAP="" class="DATASTR">' + str(cell) + '</TD>\n'
-            self._html = self._html +  '</TR>\n'
+                 self.__html = self.__html + '<TD NOWRAP="" class="DATASTR">' + str(cell) + '</TD>\n'
+            self.__html = self.__html +  '</TR>\n'
             
-        self._table_close()
+        self.__table_close()
         return self
     
-    def _table_columns(self, columns):
-        if self._closed:
+    def __table_columns(self, columns):
+        if self.__closed:
             return
         for column in columns:
-             self._html = self._html + '<TD class="HDR">' + str(column) + '</TD>\n'
+             self.__html = self.__html + '<TD class="HDR">' + str(column) + '</TD>\n'
              
-    def _table_init(self):
-        if self._closed:
+    def __table_init(self):
+        if self.__closed:
             return
-        self._html = self._html + '''<TABLE>
+        self.__html = self.__html + '''<TABLE>
                                         <COL />
                                             <COL span="28" style="text-align: center;" />
                                             <TBODY>'''
-    def _table_close(self):
-        if self._closed:
+    def __table_close(self):
+        if self.__closed:
             return
-        self._html = self._html + '''</TBODY>
+        self.__html = self.__html + '''</TBODY>
                                         </TABLE>'''                                       
-    def close(self):
-        if self._closed:
+    def __close(self):
+        if self.__closed:
             return self
-        self._closed = True
-        self._html = self._html +'''</BODY>
+        self.__closed = True
+        self.__html = self.__html +'''</BODY>
     
                          </HTML>
                       '''
         return self
     
-    def save(self, file):
-        if not self._closed:
+    def __save(self, file):
+        if not self.__closed:
             return self
-        f = open(self.dir + "/" + file, "w")
-        f.write(self._html)
+        f = open(self.__dir + "/" + file, "w")
+        f.write(self.__html)
         f.close()
         return self
     

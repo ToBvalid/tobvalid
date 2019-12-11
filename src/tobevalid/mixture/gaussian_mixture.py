@@ -49,9 +49,9 @@ class GaussianMixture(BaseMixture):
      
      def reportHTML(self, path, filename):
         from tobevalid.tools.html_generator import HTMLReport
+        from tobevalid.tools.report import Report
         
-        report = HTMLReport()
-        report.open(path)
+        report = Report()
         report.head1("Expecation Maximization of Gaussian Mixture Model").head2("Input")
         report.vtable(["Parameter","Value","Default Value"], [["File", filename, ""], 
                        ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol , 1e-3],["Maximum Iterations", self.max_iter, 100]])
@@ -69,9 +69,12 @@ class GaussianMixture(BaseMixture):
         plt.plot(x, values, label="mixture")
         plt.legend()
         plt.title(filename) 
+        report.image(plt, filename)
         
-        report.image(plt, filename + ".png")
-        report.close().save(path + "/" + filename + ".html")
+        
+        htmlreport = HTMLReport()
+        htmlreport.save(report, path, filename)
+
      
      @staticmethod
      def search(X, tol = 1e-3, max_iter = 100, mod_tol = 0.2, mix_tol = 0.1, peak_tol = 0.9, ret_mix = False):
