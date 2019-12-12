@@ -8,7 +8,9 @@ Created on Sun Nov 17 15:12:19 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from tobevalid.tools._report import Report
+from tobevalid.tools._html_generator import HTMLReport
+from tobevalid.tools._json_generator import JSONReport
 
 from .base import BaseMixture
 
@@ -47,35 +49,46 @@ class GaussianMixture(BaseMixture):
          y = (1 / (np.sqrt(2 * np.pi) * np.abs(self.sigma))) * np.exp(-u * u / 2)
          return y
      
-     def reportHTML(self, path, filename):
-        from tobevalid.tools.html_generator import HTMLReport
-        from tobevalid.tools.report import Report
+     def report(self, filename):
         
-        report = Report()
-        report.head1("Expecation Maximization of Gaussian Mixture Model").head2("Input")
+        
+        report = Report("Expecation Maximization of Gaussian Mixture Model")
+        report.head("Input")
         report.vtable(["Parameter","Value","Default Value"], [["File", filename, ""], 
                        ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol , 1e-3],["Maximum Iterations", self.max_iter, 100]])
-        report.head2("Output")
-        report.htable(["Distribution","1","2"], {'Mix parameters':self.mix, 'Mu':self.mu, 'Sigma':self.sigma})
-        report.head2("Plot")
+    
+        report.head("Output")
+        
+        report.htable(["Distribution"] + list(range(1, self.n_modes + 1)), {'Mix parameters':self.mix.tolist(), 'Mu':self.mu.tolist(), 'Sigma':self.sigma.tolist()})
+        report.head("Plots")
         
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
         x = np.unique(self.data)
         x.sort() 
         
+        plt.figure()        
         sns.set_style("white")
         sns.distplot(self.data, bins=30, kde=False, norm_hist=True)
         values = self.pdf(x)
+
         plt.plot(x, values, label="mixture")
         plt.legend()
         plt.title(filename) 
         report.image(plt, filename)
-        
-        
+
+        return report
+    
+     def savehtml(self, path, filename):
+        report = self.report(filename)
         htmlreport = HTMLReport()
         htmlreport.save(report, path, filename)
-
      
+     def savejson(self, path, filename):
+        report = self.report(filename)
+        jsonreport = JSONReport()
+        jsonreport.save(report, path, filename)   
+        
+        
      @staticmethod
      def search(X, tol = 1e-3, max_iter = 100, mod_tol = 0.2, mix_tol = 0.1, peak_tol = 0.9, ret_mix = False):
         lastres = None

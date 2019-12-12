@@ -5,33 +5,15 @@ Created on Mon Dec  9 18:50:40 2019
 @author: KavehB
 """
 
-from .report import Report, HTable, VTable, Text, Lines, Plot, Head
+from ._report import ReportGenerator, Report, Head, Text, Lines, VTable, HTable, Plot
 
-class HTMLReport:
+class HTMLReport(ReportGenerator):
     
-    def save(self, report, path, name):
-        self.__open(path)
-        for element in report.items():
-            if isinstance(element, Head):
-                if element.one():
-                    self.__head1(element.head())
-                else:
-                    self.__head2(element.head())
-                    
-            elif isinstance(element, HTable):
-                self.__htable(element.columns(), element.data())
-          
-            elif isinstance(element, VTable):
-                    self.__vtable(element.columns(), element.data())
-                    
-            elif isinstance(element, Plot):
-                self.__image(element.figure(), element.head() + ".png")
-                
-        self.__close().__save(path + "/" + name + ".html")
-       
-    def __open(self, path):
-        self.__dir = path
-        self.__closed = False
+    def __init__(self):
+        ReportGenerator.__init__(self)
+        self._extension = ".html"
+    
+    def _open(self):
         self.__html = '''<HTML>
                             <HEAD>
                                 <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1255" />
@@ -68,30 +50,32 @@ class HTMLReport:
                                     border-collapse: collapse;
                                 }
                             </style>
+    
                       '''                      
-    def __head1(self, string):
-        if self.__closed:
-            return self
-        
+    def _title(self, string):
         self.__html = self.__html + "<h1>" + string + "</h1>"
         return self
     
-    def __head2(self, string):
-        if self.__closed:
-            return self
-        self.__html = self.__html + "<h2>" + string + "</h2>"
+    
+    def _head(self, head):
+        
+        tag = min(head.depth() + 1, 6)
+        self.__html = self.__html + "<h" + str(tag) + ">" + head.head() + "</h" + str(tag) + ">"
+        
+        for child in head.children():
+            self._write(child)
         return self
     
-    def __image(self, pyplot, file):
-        if self.__closed:
-            return self
-        pyplot.savefig(self.__dir + "/" + file)
+    def _image(self, plot):
+        pyplot = plot.figure()
+        file = plot.head() + self._extension + ".png"
+        pyplot.savefig(self._dir + "/" + file)
         self.__html = self.__html + '<br><img src="'+ file +'"><br>'
         return self
     
-    def __vtable(self, columns, data):
-        if self.__closed:
-            return self
+    def _vtable(self, table):
+        columns = table.columns()
+        data = table.data()
         self.__table_init()
         self.__table_columns(columns)
              
@@ -104,16 +88,13 @@ class HTMLReport:
         self.__table_close()
         return self
         
+    def _htable(self, table):
+        columns = table.columns()
+        data = table.data()
         
-        return self
-    def __htable(self, columns, data):
-        if self.__closed:
-            return self
         self.__table_init()
         self.__table_columns(columns)
              
-
-       
         for key, row in data.items():
             self.__html = self.__html + '<TR height="20" class="ROW0">\n'
             self.__html = self.__html + '<TD NOWRAP="" class="HDR">' + key + '</TD>\n'
@@ -123,43 +104,31 @@ class HTMLReport:
             
         self.__table_close()
         return self
-    
-    def __table_columns(self, columns):
-        if self.__closed:
-            return
-        for column in columns:
-             self.__html = self.__html + '<TD class="HDR">' + str(column) + '</TD>\n'
-             
-    def __table_init(self):
-        if self.__closed:
-            return
-        self.__html = self.__html + '''<TABLE>
-                                        <COL />
-                                            <COL span="28" style="text-align: center;" />
-                                            <TBODY>'''
-    def __table_close(self):
-        if self.__closed:
-            return
-        self.__html = self.__html + '''</TBODY>
-                                        </TABLE>'''                                       
-    def __close(self):
-        if self.__closed:
-            return self
-        self.__closed = True
+                                          
+    def _close(self):
         self.__html = self.__html +'''</BODY>
     
                          </HTML>
                       '''
         return self
     
-    def __save(self, file):
-        if not self.__closed:
-            return self
-        f = open(self.__dir + "/" + file, "w")
+    def _save(self, file):
+        f = open(self._dir + "/" + file, "w")
         f.write(self.__html)
         f.close()
-        return self
+        return self 
     
     
-    
+    def __table_columns(self, columns):
+        for column in columns:
+             self.__html = self.__html + '<TD class="HDR">' + str(column) + '</TD>\n'
+             
+    def __table_init(self):
+        self.__html = self.__html + '''<TABLE>
+                                        <COL />
+                                            <COL span="28" style="text-align: center;" />
+                                            <TBODY>'''
+    def __table_close(self):
+        self.__html = self.__html + '''</TBODY>
+                                        </TABLE>''' 
     
