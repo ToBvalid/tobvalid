@@ -10,4 +10,4 @@ from ._json_generator import JSONReport
 from ._report import Report
 
 __all__ = ['Report', 'HTMLReport',
-           'HTMLReport']
+           'JSONReport']

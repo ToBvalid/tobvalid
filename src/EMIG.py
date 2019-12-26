@@ -255,6 +255,18 @@ class InverseGammaMixture(embase.Mixture):
          weightedInverseDelta = sum([z/x for (x, z) in delta])
          return -n*alpha*log(betta) + n*math.lgamma(alpha) + betta*weightedInverseDelta + (alpha + 1)*weightedLogDelta  + w*(alpha - self.al0)**2/2 
 
+    def clusters(self):
+        result = []
+        p_sum = 0
+        for i in range(self.mode):
+            p_sum += self.dist[i].pdf(self.data).sum()
+            
+        for i in range(self.mode): 
+            p = self.dist[i].pdf(self.data)
+            len_i = p.sum()/p_sum
+            
+            result.append(np.random.choice(self.data.tolist(), int(len(self.data)*len_i), p=p/p.sum()))
+        return result
 
 
 
