@@ -258,14 +258,15 @@ class InverseGammaMixture(embase.Mixture):
     def clusters(self):
         result = []
         p_sum = 0
+        d = np.unique(self.data)
         for i in range(self.mode):
-            p_sum += self.dist[i].pdf(self.data).sum()
+            p_sum += self.dist[i].pdf(d).sum()
             
         for i in range(self.mode): 
-            p = self.dist[i].pdf(self.data)
+            p = self.dist[i].pdf(d)
             len_i = p.sum()/p_sum
             
-            result.append(np.random.choice(self.data.tolist(), int(len(self.data)*len_i), p=p/p.sum()))
+            result.append(np.random.choice(d.tolist(), int(len(self.data)*len_i), p=p/p.sum()))
         return result
 
 
