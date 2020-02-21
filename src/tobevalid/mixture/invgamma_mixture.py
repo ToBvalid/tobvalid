@@ -9,7 +9,7 @@ Created on Mon Dec  9 15:26:01 2019
 
 import numpy as np
 from scipy import special
-
+import scipy.stats as st
 
 from .base import BaseMixture
 
@@ -18,17 +18,28 @@ class InverseGammaMixture(BaseMixture):
      def __init__(self, n_modes = 1, tol = 1e-3, max_iter = 100):
         BaseMixture.__init__(self, n_modes, tol, max_iter) 
      
+     def _check_initial_custom_parameters(self, **kwargs):
+        return
+    
      def _check_parameters(self, X, **kwargs):
         return
      
+     
      def _init_parameters(self, **kwargs):
+        self.c = 0.1
+        self.al0 = 3.5
+        self.sig = 0.1
+        self.epsilon = 1.0e-16
+        self.step = 1
+         
         self.Z = kwargs["z"]
-        N = self.z.sum(axis = 1)  
-        mdB = np.matmul(self.z, self.data.T)/N
-        minB =  [np.min(self.data[self.z[i] > self.c]) for i in range(self.n_modes)]       
+        N = self.Z.sum(axis = 0)
+        mdB = np.matmul(self.data, self.Z)/N
+        minB =  [np.min(self.data[self.Z[:, i] > self.c]) for i in range(self.n_modes)] 
         self.shift = np.array(minB)
         self.alpha = np.full(self.n_modes, 3.5)
         self.betta = (mdB - self.shift)*(self.alpha - 1)
+        
 
         
      def _m_step(self):
@@ -38,7 +49,7 @@ class InverseGammaMixture(BaseMixture):
         ialpha = self.alpha.copy() 
         ibetta = self.betta.copy() 
         ishift = self.shift.copy()
-        ifvalue = self.loglike
+        ifvalue = self._loglike
         conv = False
         while not conv:
             self.alpha = np.maximum(ialpha + step*ss[0], np.array([0.1]*self.n_modes))
@@ -46,8 +57,8 @@ class InverseGammaMixture(BaseMixture):
             self.shift = ishift + step*ss[2]       
 
             self.CalcFisherMatrix()
-            
-            if self.loglike > ifvalue:
+
+            if self._loglike > ifvalue:
                 step = step*0.7
             else:
                 conv = True
@@ -58,20 +69,14 @@ class InverseGammaMixture(BaseMixture):
                         self.alpha[i] = ialpha[i]
                         self.betta[i] = ibetta[i]
                         self.shift[i]= ishift[i]
-                    self.loglike = ifvalue
-                break
-        for i in range(self.n_modes):
-            self.dist[i].alpha = self.alpha[i]
-            self.dist[i].betta = self.betta[i]
-            self.dist[i].shift= self.shift[i]
-            self.dist[i].refresh()
-
+                    self._loglike = ifvalue
+                break 
         return conv
       
      def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1)) 
 
-        self.loglike = 0
+        self._loglike = 0
         self.gradA = 0
         self.gradBt = 0
         self.gradS = 0
@@ -87,12 +92,12 @@ class InverseGammaMixture(BaseMixture):
         weightedLogDelta = np.zeros((self.n_modes))
         weightedInverseDelta = np.zeros((self.n_modes))
         inverseSquareDelta = np.zeros((self.n_modes))
-         
+        
         for i in range(self.n_modes):   
 
             n = self.N[i]
 
-            zj = self.weights[i]    
+            zj = self.Z.T[i]    
             idx = self.data > self.shift[i]
             delta = self.data[idx] - self.shift[i]
             
@@ -113,7 +118,8 @@ class InverseGammaMixture(BaseMixture):
             self.gradBetta = -self.N*self.alpha/self.betta + weightedInverseDelta        
             self.gradB = self.betta*inverseSquareDelta - (self.alpha + 1)*weightedInverseDelta         
                      
-            self.loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta*weightedInverseDelta + (self.alpha + 1)*weightedLogDelta  + w*(self.alpha - self.al0)**2/2, self.mix)
+            self._loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta*weightedInverseDelta + (self.alpha + 1)*weightedLogDelta  + w*(self.alpha - self.al0)**2/2, self.mix)
+
         for i in range(self.n_modes):
             for j in range(3):
                 for k in range(3):
@@ -128,6 +134,5 @@ class InverseGammaMixture(BaseMixture):
         return True
         
      def _pdf(self, X):
-         u = (X - self.mu) / np.abs(self.sigma)
-         y = (1 / (np.sqrt(2 * np.pi) * np.abs(self.sigma))) * np.exp(-u * u / 2)
-         return y
+         dist = st.invgamma(self.alpha, self.shift, self.betta)
+         return dist.pdf(X)

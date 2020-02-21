@@ -106,8 +106,8 @@ class InverseGammaMixture(embase.Mixture):
         N = self.z.sum(axis = 1)  
         mdB = np.matmul(self.z, self.data.T)/N
         minB =  [np.min(self.data[self.z[i] > self.c]) for i in range(self.mode)]
-
         self.shift = np.array(minB)
+        
         self.alpha = np.full(self.mode, 3.5)
         self.betta = (mdB - self.shift)*(self.alpha - 1)
    
@@ -128,8 +128,10 @@ class InverseGammaMixture(embase.Mixture):
                     wps[i][j] = wps[i][j]/sums[j]
             
         self.weights = wps  
+
         self.N = np.sum(self.weights, axis = 1)
         
+
         self.mix = self.N*(1/sum(self.N))
 
 
@@ -171,7 +173,6 @@ class InverseGammaMixture(embase.Mixture):
                 self.dist[i].betta = self.betta[i]
                 self.dist[i].shift= self.shift[i]
                 self.dist[i].refresh()
-    
             return conv
       
     def CalcFisherMatrix(self):
@@ -193,7 +194,7 @@ class InverseGammaMixture(embase.Mixture):
         weightedLogDelta = np.zeros((self.mode))
         weightedInverseDelta = np.zeros((self.mode))
         inverseSquareDelta = np.zeros((self.mode))
-         
+        
         for i in range(self.mode):   
 
             n = self.N[i]
@@ -258,15 +259,15 @@ class InverseGammaMixture(embase.Mixture):
     def clusters(self):
         result = []
         p_sum = 0
-        d = np.unique(self.data)
+
         for i in range(self.mode):
-            p_sum += self.dist[i].pdf(d).sum()
+            p_sum += self.dist[i].pdf(self.data).sum()
             
         for i in range(self.mode): 
-            p = self.dist[i].pdf(d)
-            len_i = p.sum()/p_sum
             
-            result.append(np.random.choice(d.tolist(), int(len(self.data)*len_i), p=p/p.sum()))
+            p = self.dist[i].pdf(self.data)
+            len_i = p.sum()/p_sum
+            result.append(np.random.choice(self.data.tolist(), int(len(self.data)*len_i), p=p/p.sum(), replace=False))
         return result
 
 

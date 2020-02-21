@@ -14,15 +14,17 @@ class BaseMixture:
     provides basic common methods for mixture models.
     """
     
-    def __init__(self, n_modes, tol, max_iter):
+    def __init__(self, n_modes, tol, max_iter, **kwargs):
         self.n_modes = n_modes
         self.tol = tol
         self.max_iter = max_iter
         self._loglike = 0
         self.mix = np.ones(self.n_modes)/self.n_modes
         self.nit = 0
+        
+        self._check_initial_parameters(**kwargs)
  
-    def _check_initial_parameters(self, X):
+    def _check_initial_parameters(self, **kwargs):
         """Check values of the basic parameters.
 
         """
@@ -42,29 +44,9 @@ class BaseMixture:
                              % self.max_iter)
 
         # Check all the parameters values of the derived class
-        self._check_parameters(X)
+        self._check_initial_custom_parameters(**kwargs)
 
     
-    def _check_parameters(self, X, **kwargs):
-        pass
-     
-    def pdf(self, X):
-        if isinstance(X, (np.ndarray)):
-            return np.matmul(self._pdf(np.repeat(X[np.newaxis,...], self.n_modes, axis=0).T ), self.mix.T) 
-         
-        if isinstance(X, (int, float)):
-            return np.matmul(self._pdf(X), self.mix.T)
-        
-        if isinstance(X, (list, tuple)) and all(isinstance(x, (int, float)) for x in X):
-            return self.pdf(np.array(X))
-        
-
-        raise ValueError( "Expected numerical array or number, got {} instead.".format(X)) 
-         
-    
-    def _pdf(self, X):
-        pass
-
     
     def fit(self, X, **kwargs):
         self._check_X(X)
@@ -79,6 +61,7 @@ class BaseMixture:
         
         lower_bound = -np.infty
         self.nit = 0
+        
         for n_iter in np.arange(1, self.max_iter + 1):
            
             prev_lower_bound = lower_bound
@@ -94,10 +77,63 @@ class BaseMixture:
                 self._converged_ = True
                 break
         self.nit = n_iter    
+        
+        
     def loglike(self):
         return self._loglike
     
+    def pdf(self, X):
+        if isinstance(X, (np.ndarray)):
+            return np.matmul(self._pdf(np.repeat(X[np.newaxis,...], self.n_modes, axis=0).T ), self.mix.T) 
+         
+        if isinstance(X, (int, float)):
+            return np.matmul(self._pdf(X), self.mix.T)
         
+        if isinstance(X, (list, tuple)) and all(isinstance(x, (int, float)) for x in X):
+            return self.pdf(np.array(X))
+        
+
+        raise ValueError( "Expected numerical array or number, got {} instead.".format(X)) 
+         
+    
+    def mixpdf(self, X):
+        if isinstance(X, (np.ndarray)):
+            return self._pdf(np.repeat(X[np.newaxis,...], self.n_modes, axis=0).T )
+         
+        if isinstance(X, (int, float)):
+            return self._pdf(X)
+        
+        if isinstance(X, (list, tuple)) and all(isinstance(x, (int, float)) for x in X):
+            return self.mixpdf(np.array(X))
+        
+
+        raise ValueError( "Expected numerical array or number, got {} instead.".format(X)) 
+    
+    
+    
+    def clusters(self):
+        result = []
+        p = self.mixpdf(self.data).T
+        p_sum = p.sum()
+        lengths = p.sum(axis = 1)/p_sum
+        
+        for i in np.arange(self.n_modes): 
+            result.append(np.random.choice(self.data.tolist(), int(len(self.data)*lengths[i]), p=p[i]/p[i].sum(), replace=False))
+        return result
+    
+    
+    
+    def _check_initial_custom_parameters(self, **kwargs):
+        pass
+    
+    
+        
+    def _pdf(self, X):
+        pass
+    
+    def _check_parameters(self, X, **kwargs):
+        pass
+     
     def _check_X(self, X):
         
         if not isinstance(X, (np.ndarray)):
@@ -109,10 +145,11 @@ class BaseMixture:
         if not X.dtype in [np.float32, np.float64]:
             raise ValueError( "Expected numerical ndarray, got {} instead.".format(X))
     
+    
+    
     def _init_parameters(self, **kwargs):
         pass
     
-        
     
     def _mix_values(self):   
         values = self._pdf(self.data_n)
@@ -131,10 +168,11 @@ class BaseMixture:
         
     def _e_step(self):
         self._calc_posterior_z()
-        self.N = np.sum(self.Z, axis = 1)
+        self.N = np.sum(self.Z.T, axis = 1)
         self.mix = self.N*(1/np.sum(self.N))
     
     def _m_step(self):
         pass
+
     
     

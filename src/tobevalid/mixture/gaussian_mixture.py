@@ -18,6 +18,10 @@ class GaussianMixture(BaseMixture):
      def __init__(self, n_modes = 1, tol = 1e-3, max_iter = 100):
         BaseMixture.__init__(self, n_modes, tol, max_iter) 
      
+    
+     def _check_initial_custom_parameters(self, **kwargs):
+        return
+    
      def _check_parameters(self, X, **kwargs):
         return
      
@@ -26,11 +30,10 @@ class GaussianMixture(BaseMixture):
         mu_max = np.max(self.data)
         self.mu = np.array([mu_min +  (mu_max - mu_min)*(2.*i + 1)/(2.*self.n_modes) for i in range(self.n_modes)])
         self.sigma =   np.ones(self.n_modes)*(mu_max-mu_min)/(self.n_modes*np.sqrt(12.))
-
+        
         
      def _m_step(self):
         N = np.sum(self.Z, axis = 0)
-
         self.mu = np.sum((self.Z* self.data_n) *np.reciprocal(N, dtype=float), axis = 0 )
 
         diff = self.data_n - self.mu  
@@ -88,44 +91,6 @@ class GaussianMixture(BaseMixture):
         jsonreport = JSONReport()
         jsonreport.save(report, path, filename)   
         
-        
-     @staticmethod
-     def search(X, tol = 1e-3, max_iter = 100, mod_tol = 0.2, mix_tol = 0.1, peak_tol = 0.9, ret_mix = False):
-        lastres = None
-        mode = 2
-        while (True):
-            mixture = GaussianMixture(mode, tol, max_iter)
-            mixture.fit(X)
-            z = mixture.Z.T
-             
-            if ((mixture.mix < mix_tol).any()):
-                break
-            if(min(z.sum(axis = 1)*mixture.mix/X.size) < 0.1):
-                break
-            it = 0
-            for i in np.arange(mode - 1):
-                z1 = z[i].sum()
-                z2 = z[i + 1].sum()
-                z12 = z[i, z[i] <= z[i + 1]].sum() + z[i + 1, z[i] >= z[i + 1]].sum()
-                if (2*z12/(z1 + z2) >= mod_tol):
-                    break
-                peak1 = mixture.mix[i]/(np.sqrt(2*np.pi)*mixture.sigma[i])
-                peak2 = mixture.mix[i + 1]/(np.sqrt(2*np.pi)*mixture.sigma[i + 1])
-                if(abs(mixture.mu[i + 1] - mixture.mu[i]) < (mixture.sigma[i + 1] + mixture.sigma[i]) 
-                    and min(peak1, peak2)/max(peak1, peak2) > peak_tol):
-                    break
-                it += 1
-            if(it < mode - 1):
-                break
-            lastres = mixture
-            mode += 1
-        if(ret_mix == False):
-            return mode - 1
-        if( mode == 2):
-            mixture = GaussianMixture(1, tol, max_iter)
-            mixture.fit(X)
-            return (1, mixture)
-        return (mode - 1, lastres)
   
     
      
