@@ -59,7 +59,7 @@ def modes(data, kernel, x_tol = 0.00001, rnd = 2, neighbour = 1):
     
 
 
-def silverman(data, rnd=2, p_value = 0.05, neighbour = 1):
+def silverman(data, rnd=2, neighbour = 10):
     kernel = stats.gaussian_kde(data, bw_method='silverman')
     result = modes(data, kernel, neighbour = neighbour, rnd = rnd)
     return (result, kernel)

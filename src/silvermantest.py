@@ -5,16 +5,14 @@ Created on Thu Jul 18 15:21:25 2019
 @author: KavehB
 """
 
-import silverman as sv
+import tobevalid.stats.silverman as sv
 import gparser as gp
-import pheight as ph
-from scipy import stats
+import tobevalid.stats.pheight as ph
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from scipy.stats import gaussian_kde
-from tobevalid.mixture.gaussian_mixture import GaussianMixture
 
+from tobevalid.mixture.gaussian_mixture import GaussianMixture
 
 
 
@@ -27,22 +25,17 @@ def silverman(file, data, s, neighbour = 1):
     
     
     plt.figure(figsize=(12.8, 4.8))
-#    plt.subplot(1, 2, 1)
     sns.distplot(d, bins=100, kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
     p_x = np.linspace(start=min(d), stop=max(d), num=1000)
     dvalues = kernel.pdf(p_x)
     plt.plot(p_x, dvalues, label="pdf")
     plt.title("Silvermann. Peak height. File: {}. Mode number {}. Modes {}".format(file, mode[0], mode[1]))
     
-#    plt.subplot(1, 2, 2)
-#    sns.distplot(data, bins=50, kde=False, norm_hist=True)
-#    plt.title(file + " " + str(mode) );
+
     return mode
 
 
-#
     
-
 
 file = "5TU8_out.pdb"
 (s, data) = gp.gemmy_parse("../data/pdb/"+ file)
