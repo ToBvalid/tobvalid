@@ -22,7 +22,9 @@ class InverseGammaMixture(BaseMixture):
         return
     
      def _check_parameters(self, X, **kwargs):
-        return
+        if self._fit == False  and not("z" in kwargs):
+             raise ValueError("Inverse Gamma Mixture requires 'z'")
+         
      
      
      def _init_parameters(self, **kwargs):
@@ -31,8 +33,10 @@ class InverseGammaMixture(BaseMixture):
         self.sig = 0.1
         self.epsilon = 1.0e-16
         self.step = 1
-         
-        self.Z = kwargs["z"]
+        
+        if ("z" in kwargs):
+            self.Z = kwargs["z"]
+        
         N = self.Z.sum(axis = 0)
         mdB = np.matmul(self.data, self.Z)/N
         minB =  [np.min(self.data[self.Z[:, i] > self.c]) for i in range(self.n_modes)] 
@@ -49,7 +53,8 @@ class InverseGammaMixture(BaseMixture):
         ialpha = self.alpha.copy() 
         ibetta = self.betta.copy() 
         ishift = self.shift.copy()
-        ifvalue = self._loglike
+        ifvalue = self.loglike()
+        
         conv = False
         while not conv:
             self.alpha = np.maximum(ialpha + step*ss[0], np.array([0.1]*self.n_modes))
@@ -63,13 +68,12 @@ class InverseGammaMixture(BaseMixture):
             else:
                 conv = True
                 break
+        
             if step <= self.epsilon: 
-                if not conv:
-                    for i in range(self.n_modes):
-                        self.alpha[i] = ialpha[i]
-                        self.betta[i] = ibetta[i]
-                        self.shift[i]= ishift[i]
-                    self._loglike = ifvalue
+                self.alpha = ialpha.copy()
+                self.betta = ibetta.copy()
+                self.shiftv= ishift.copy()
+                self._loglike = ifvalue
                 break 
         return conv
       
@@ -77,18 +81,14 @@ class InverseGammaMixture(BaseMixture):
         w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1)) 
 
         self._loglike = 0
-        self.gradA = 0
-        self.gradBt = 0
-        self.gradS = 0
-        self.d2l = np.zeros((3*self.n_modes, 3*self.n_modes))
-        self.fvalue = [0]*self.n_modes
         
-        self.gradAlpha = [0]*self.n_modes
+        self.__d2l = np.zeros((3*self.n_modes, 3*self.n_modes))
+        self.__gradAlpha = [0]*self.n_modes
+        self.__gradBetta =  [0]*self.n_modes
+        self.__gradB =   [0]*self.n_modes  
         
-        self.gradBetta =  [0]*self.n_modes
+        d2f =  [0]*self.n_modes 
         
-        self.gradB =   [0]*self.n_modes  
-        self.d2f =  [0]*self.n_modes 
         weightedLogDelta = np.zeros((self.n_modes))
         weightedInverseDelta = np.zeros((self.n_modes))
         inverseSquareDelta = np.zeros((self.n_modes))
@@ -109,26 +109,28 @@ class InverseGammaMixture(BaseMixture):
             
             alpha = self.alpha[i]
             betta = self.betta[i]
-            self.d2f[i] =  np.array([[n*special.polygamma(1, alpha) + w[0], -n/betta, -n*alpha/betta ],
-                         [-n/betta, n*alpha/np.power(betta, 2), n*alpha*(alpha + 1)/np.power(betta, 2)],
-                      [-n*alpha/betta,  n*alpha*(alpha + 1)/np.power(betta, 2),  n*alpha*(alpha + 1)*(alpha + 3)/np.power(betta, 2)]])
+            
+            d2f[i] =  np.array([
+                        [n*special.polygamma(1, alpha) + w[0], -n/betta, -n*alpha/betta ],
+                        [-n/betta, n*alpha/np.power(betta, 2), n*alpha*(alpha + 1)/np.power(betta, 2)],
+                        [-n*alpha/betta,  n*alpha*(alpha + 1)/np.power(betta, 2),  n*alpha*(alpha + 1)*(alpha + 3)/np.power(betta, 2)]])
 
         
-            self.gradAlpha = self.N*special.psi(self.alpha) - self.N*np.log(self.betta) + weightedLogDelta  + w*(self.alpha - self.al0)  
-            self.gradBetta = -self.N*self.alpha/self.betta + weightedInverseDelta        
-            self.gradB = self.betta*inverseSquareDelta - (self.alpha + 1)*weightedInverseDelta         
-                     
-            self._loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta*weightedInverseDelta + (self.alpha + 1)*weightedLogDelta  + w*(self.alpha - self.al0)**2/2, self.mix)
+        self.__gradAlpha = self.N*special.psi(self.alpha) - self.N*np.log(self.betta) + weightedLogDelta  + w*(self.alpha - self.al0)  
+        self.__gradBetta = -self.N*self.alpha/self.betta + weightedInverseDelta        
+        self.__gradB = self.betta*inverseSquareDelta - (self.alpha + 1)*weightedInverseDelta         
+                 
+        self._loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta*weightedInverseDelta + (self.alpha + 1)*weightedLogDelta  + w*(self.alpha - self.al0)**2/2, self.mix)
 
         for i in range(self.n_modes):
             for j in range(3):
                 for k in range(3):
-                    self.d2l[3*i + j, k + 3*i] =  self.mix[i]*self.d2f[i][j][k]
+                    self.__d2l[3*i + j, k + 3*i] =  self.mix[i]*d2f[i][j][k]
                   
      def shiftcalc(self, tol = 1.0e-5):
 
-        inv = np.linalg.inv(self.d2l + tol*np.random.randn(3*self.n_modes, 3*self.n_modes))
-        grad = np.transpose(np.array([self.gradAlpha, self.gradBetta, self.gradB])).flatten()
+        inv = np.linalg.inv(self.__d2l + tol*np.random.randn(3*self.n_modes, 3*self.n_modes))
+        grad = np.transpose(np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
         shiftc = np.matmul(-inv, grad)
         return shiftc.reshape((self.n_modes, 3)).T
         return True
@@ -136,3 +138,14 @@ class InverseGammaMixture(BaseMixture):
      def _pdf(self, X):
          dist = st.invgamma(self.alpha, self.shift, self.betta)
          return dist.pdf(X)
+     
+     def _cdf(self, X):
+         dist = st.invgamma(self.alpha, self.shift, self.betta)
+         return dist.cdf(X)
+    
+     def _ppf(self, p):
+         dist = st.invgamma(self.alpha, self.shift, self.betta)
+         return dist.ppf(p)
+         
+        
+  

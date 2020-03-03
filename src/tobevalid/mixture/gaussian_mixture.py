@@ -11,6 +11,7 @@ import seaborn as sns
 from tobevalid.tools._report import Report
 from tobevalid.tools._html_generator import HTMLReport
 from tobevalid.tools._json_generator import JSONReport
+import scipy.special as special
 
 from .base import BaseMixture
 
@@ -52,6 +53,15 @@ class GaussianMixture(BaseMixture):
          y = (1 / (np.sqrt(2 * np.pi) * np.abs(self.sigma))) * np.exp(-u * u / 2)
          return y
      
+     def _cdf(self, X):
+        return (1.0 + special.erf((X - self.mu) /( np.sqrt(2.0)*self.sigma))) / 2.0
+    
+     def _ppf(self, p):
+         return self.mu + self.sigma*np.sqrt(2.0)*special.erfinv(2*p - 1)
+        
+         
+
+             
      def report(self, filename):
         
         

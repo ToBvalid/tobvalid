@@ -6,6 +6,8 @@ Created on Sun Nov 17 15:14:24 2019
 """
 
 import numpy as np
+from scipy.optimize import root_scalar
+from scipy.stats import probplot
 
 class BaseMixture:
     """Base class for mixture models.
@@ -15,6 +17,7 @@ class BaseMixture:
     """
     
     def __init__(self, n_modes, tol, max_iter, **kwargs):
+        self._fit = False
         self.n_modes = n_modes
         self.tol = tol
         self.max_iter = max_iter
@@ -23,6 +26,7 @@ class BaseMixture:
         self.nit = 0
         
         self._check_initial_parameters(**kwargs)
+        
  
     def _check_initial_parameters(self, **kwargs):
         """Check values of the basic parameters.
@@ -69,14 +73,15 @@ class BaseMixture:
             if not self._m_step():
                 break
             
-            lower_bound = self._loglike
+            lower_bound = self.loglike()
     
             change = lower_bound - prev_lower_bound
 
             if n_iter > 1 and np.abs(change/prev_lower_bound) < self.tol:
                 self._converged_ = True
                 break
-        self.nit = n_iter    
+        self.nit = n_iter   
+        self._fit = True
         
         
     def loglike(self):
@@ -93,8 +98,33 @@ class BaseMixture:
             return self.pdf(np.array(X))
         
 
-        raise ValueError( "Expected numerical array or number, got {} instead.".format(X)) 
+        raise ValueError( "Expected numerical array or number, got {} instead.".format(X))
+        
+    def cdf(self, X):
+        if isinstance(X, (np.ndarray)):
+            return np.matmul(self._cdf(np.repeat(X[np.newaxis,...], self.n_modes, axis=0).T ), self.mix.T) 
          
+        if isinstance(X, (int, float)):
+            return np.matmul(self._cdf(X), self.mix.T)
+        
+        if isinstance(X, (list, tuple)) and all(isinstance(x, (int, float)) for x in X):
+            return self.cdf(np.array(X))
+        
+
+        raise ValueError( "Expected numerical array or number, got {} instead.".format(X))      
+    
+    def ppf(self, p):
+        
+        if self.n_modes == 1:
+            return self._ppf(p)
+        
+        if isinstance(p, (np.ndarray)) or (isinstance(p, (list, tuple)) and all(isinstance(x, (int, float)) for x in  p)):
+            return np.array([self.ppf(pi) for pi in p])
+            
+        ppf = self._ppf(p)
+        low = np.min(ppf)
+        high = np.max(ppf)
+        return root_scalar(lambda x: self.cdf(x) - p, method='bisect', bracket=[low, high], maxiter = 10).root
     
     def mixpdf(self, X):
         if isinstance(X, (np.ndarray)):
@@ -121,7 +151,8 @@ class BaseMixture:
             result.append(np.random.choice(self.data.tolist(), int(len(self.data)*lengths[i]), p=p[i]/p[i].sum(), replace=False))
         return result
     
-    
+    def probplot(self, plt):
+        return probplot(self.data, plot=plt, dist = self, fit=False)
     
     def _check_initial_custom_parameters(self, **kwargs):
         pass
@@ -129,6 +160,12 @@ class BaseMixture:
     
         
     def _pdf(self, X):
+        pass
+    
+    def _cdf(self, X):
+        pass
+    
+    def _ppf(self, p):
         pass
     
     def _check_parameters(self, X, **kwargs):

@@ -6,7 +6,7 @@ Created on Thu Jul 18 15:21:25 2019
 """
 
 import tobevalid.stats.silverman as sv
-import gparser as gp
+import tobevalid.parsers.gparser as gp
 import tobevalid.stats.pheight as ph
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -25,7 +25,7 @@ def silverman(file, data, s, neighbour = 1):
     
     
     plt.figure(figsize=(12.8, 4.8))
-    sns.distplot(d, bins=100, kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+    sns.distplot(d, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
     p_x = np.linspace(start=min(d), stop=max(d), num=1000)
     dvalues = kernel.pdf(p_x)
     plt.plot(p_x, dvalues, label="pdf")
@@ -37,8 +37,9 @@ def silverman(file, data, s, neighbour = 1):
 
     
 
-file = "5TU8_out.pdb"
+file = "1A8T_out.pdb"
 (s, data) = gp.gemmy_parse("../data/pdb/"+ file)
+
 modes = silverman(file, data, s, neighbour=10)
 
 
@@ -49,7 +50,7 @@ mixture.fit(p_data)
 
 plt.figure(figsize=(12.8, 4.8))
 p_x = np.linspace(start=min(p_data), stop=max(p_data), num=1000)
-sns.distplot(p_data, bins=100, kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+sns.distplot(p_data, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
 dvalues = mixture.pdf(p_x)
 mvalues = mixture.mixpdf(p_x)
 for i in np.arange(mode):
@@ -63,13 +64,13 @@ plt.title("GMM. Peak height. File: {}.".format(file))
 
 from tobevalid.mixture.invgamma_mixture import InverseGammaMixture
 
-inv = InverseGammaMixture(mode, tol = 1e-15)
+inv = InverseGammaMixture(mode, tol = 1e-15, max_iter=200)
 inv.fit(data, z=mixture.Z)
 
 
 plt.figure(figsize=(12.8, 4.8))
 p_x = np.linspace(start=min(data), stop=max(data), num=1000)
-sns.distplot(data, bins=100, kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+sns.distplot(data, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
 dvalues = inv.pdf(p_x)
 plt.plot(p_x, dvalues, label="IGMM")
 plt.legend()  
@@ -80,7 +81,25 @@ for i in np.arange(mode):
 plt.legend()    
 plt.title("IGMM. B-Value. File: {}.".format(file)) 
 
+plt.figure(figsize=(12.8, 4.8))
 
+res = inv.probplot(plt)
+
+
+#plt.show()
+#clusters = inv.clusters()
+#
+#plt.figure(figsize=(12.8, 4.8))
+#for cluster in clusters:
+#    sns.distplot(cluster, bins=100, kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+#
+#
+#stats.probplot(clusters[i], sparams=(inv.alpha[i], inv.shift[i], inv.betta[i]), dist=stats.invgamma, plot=plt)    
+
+
+#for i in np.arange(len(clusters)):
+#    stats.probplot(clusters[i], sparams=(inv.alpha[i], inv.shift[i], inv.betta[i]), dist=stats.invgamma, plot=plt)    
+    
 #in_dir = "../data/pdb/"
 #files = sv.get_files(in_dir)
 #files.sort()
