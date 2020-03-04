@@ -15,14 +15,14 @@ from scipy import stats
 
 
 #This function double value and list of doubles. Returns true if value contains in the list
-def inlist(x, l, x_tol = 0.00001):
+def inlist(x, l, x_tol = 1e-5):
     for v in l:
         if np.abs(x - v) < x_tol:
             return True
     return False    
 
  #This function remove duplicates in list and sorts its values
-def remove_dup(duplicate, x_tol = 0.00001): 
+def remove_dup(duplicate, x_tol = 1e-5): 
     final_list = [] 
     for num in duplicate: 
         if not inlist(num, final_list, x_tol): 
@@ -36,7 +36,7 @@ def filter_bymax(l, f):
 
   
 
-def modes(data, kernel, x_tol = 0.00001, rnd = 2, neighbour = 1):    
+def modes(data, kernel, x_tol = 1e-5, rnd = 2, neighbour = 1):    
     result = list()
     length = np.max(data) - np.min(data)
     line = np.linspace(start= np.min(data) - 0.1*length, stop = np.max(data) + 0.1 * length, num = 100)
