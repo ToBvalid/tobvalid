@@ -8,12 +8,12 @@ Created on Sun Nov 17 15:12:19 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from tobevalid.tools._report import Report
-from tobevalid.tools._html_generator import HTMLReport
-from tobevalid.tools._json_generator import JSONReport
+from ._report import Report
+from ._html_generator import HTMLReport
+from ._json_generator import JSONReport
 import scipy.special as special
 
-from .base import BaseMixture
+from ._base import BaseMixture
 
 class GaussianMixture(BaseMixture):
      def __init__(self, n_modes = 1, tol = 1e-3, max_iter = 100):

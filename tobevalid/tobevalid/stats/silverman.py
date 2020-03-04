@@ -15,28 +15,28 @@ from scipy import stats
 
 
 #This function double value and list of doubles. Returns true if value contains in the list
-def inlist(x, l, x_tol = 1e-5):
+def _inlist(x, l, x_tol = 1e-5):
     for v in l:
         if np.abs(x - v) < x_tol:
             return True
     return False    
 
  #This function remove duplicates in list and sorts its values
-def remove_dup(duplicate, x_tol = 1e-5): 
+def _remove_dup(duplicate, x_tol = 1e-5): 
     final_list = [] 
     for num in duplicate: 
-        if not inlist(num, final_list, x_tol): 
+        if not _inlist(num, final_list, x_tol): 
             final_list.append(num) 
     return final_list  
 
 
-def filter_bymax(l, f):
+def _filter_bymax(l, f):
     mx = max([f(v) for v in l])
     return [v for v in l if f(v)/mx > 0.1]
 
   
 
-def modes(data, kernel, x_tol = 1e-5, rnd = 2, neighbour = 1):    
+def _modes(data, kernel, x_tol = 1e-5, rnd = 2, neighbour = 1):    
     result = list()
     length = np.max(data) - np.min(data)
     line = np.linspace(start= np.min(data) - 0.1*length, stop = np.max(data) + 0.1 * length, num = 100)
@@ -52,16 +52,16 @@ def modes(data, kernel, x_tol = 1e-5, rnd = 2, neighbour = 1):
             result.append(np.round(line[i], rnd))  
             
     result.sort()        
-    result = filter_bymax(remove_dup(result, x_tol), kernel)
+    result = _filter_bymax(_remove_dup(result, x_tol), kernel)
     return (len(result), result) 
 
 
     
 
 
-def silverman(data, rnd=2, neighbour = 10):
+def kde_silverman(data, rnd=2, neighbour = 10):
     kernel = stats.gaussian_kde(data, bw_method='silverman')
-    result = modes(data, kernel, neighbour = neighbour, rnd = rnd)
+    result = _modes(data, kernel, neighbour = neighbour, rnd = rnd)
     return (result, kernel)
            
 

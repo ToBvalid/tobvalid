@@ -11,7 +11,7 @@ import numpy as np
 from scipy import special
 import scipy.stats as st
 
-from .base import BaseMixture
+from ._base import BaseMixture
 
 
 class InverseGammaMixture(BaseMixture):
