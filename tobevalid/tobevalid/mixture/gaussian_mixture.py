@@ -8,17 +8,16 @@ Created on Sun Nov 17 15:12:19 2019
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.special as special
-import seaborn as sns
+
 
 from ._base import BaseMixture
-from ._html_generator import HTMLReport
-from ._json_generator import JSONReport
 from ._report import Report
 
 
 class GaussianMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-3, max_iter=100):
+    def __init__(self, n_modes=1, tol=1e-05, max_iter=100):
         BaseMixture.__init__(self, n_modes, tol, max_iter)
+        self._ext = "_gmm"
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -70,7 +69,7 @@ class GaussianMixture(BaseMixture):
         report = Report("Expecation Maximization of Gaussian Mixture Model")
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-3], ["Maximum Iterations", self.max_iter, 100]])
+                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 100]])
 
         report.head("Output")
 
@@ -78,28 +77,8 @@ class GaussianMixture(BaseMixture):
                       {'Mix parameters': self.mix.tolist(), 'Mu': self.mu.tolist(), 'Sigma': self.sigma.tolist()})
         report.head("Plots")
 
-        x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
-        x = np.unique(self.data)
-        x.sort()
-
-        plt.figure()
-        sns.set_style("white")
-        sns.distplot(self.data, bins=30, kde=False, norm_hist=True)
-        values = self.pdf(x)
-
-        plt.plot(x, values, label="mixture")
-        plt.legend()
-        plt.title(filename)
-        report.image(plt, filename)
+        report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Gaussian Mixture: {}".format(filename))
 
         return report
 
-    def savehtml(self, path, filename):
-        report = self.report(filename)
-        htmlreport = HTMLReport()
-        htmlreport.save(report, path, filename)
-
-    def savejson(self, path, filename):
-        report = self.report(filename)
-        jsonreport = JSONReport()
-        jsonreport.save(report, path, filename)
+ 

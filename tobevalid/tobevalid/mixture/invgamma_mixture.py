@@ -9,13 +9,17 @@ Created on Mon Dec  9 15:26:01 2019
 import numpy as np
 import scipy.stats as st
 from scipy import special
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 from ._base import BaseMixture
-
+from ._report import Report
 
 class InverseGammaMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-3, max_iter=100):
+    def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
         BaseMixture.__init__(self, n_modes, tol, max_iter)
+        self._ext = "_igmm"
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -33,7 +37,7 @@ class InverseGammaMixture(BaseMixture):
 
         if self.n_modes == 1:
             self.Z = np.ones(len(self.data)).reshape(len(self.data), 1)
-        if ("z" in kwargs):
+        elif ("z" in kwargs):
             self.Z = kwargs["z"]
 
         N = self.Z.sum(axis=0)
@@ -144,6 +148,28 @@ class InverseGammaMixture(BaseMixture):
     def params(self):
             return {"mix": self.mix, "alpha": self.alpha, "betta":self.betta, "shift":self.shift}
 
+    def report(self, filename):
+    
+        report = Report("Expecation Maximization of Inverse Gamma Mixture Model")
+        report.head("Input")
+        report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
+                                                                ["Number of modes", self.n_modes, 1], 
+                                                                ["Tolerance", self.tol, 1e-05],
+                                                                 ["Maximum Iterations", self.max_iter, 100]])
+
+        report.head("Output")
+
+        report.htable(["Distribution"] + list(range(1, self.n_modes + 1)),
+                      {'Mix parameters': self.mix.tolist(), 'alpha': self.alpha.tolist(), 'beta': self.betta.tolist(), 'shift': self.shift.tolist()})
+        report.head("Plots")
+
+        report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Inverse Gamma Mixture: {}".format(filename))
+        report.image(plt, self.probplot, filename +  ".pp" + self._ext, "P-P Plot: {}".format(filename))
+        report.image(plt, self.qqplot, filename +  ".qq" + self._ext, "Q-Q Plot: {}".format(filename))
+        
+        
+        return report
+        
     def _pdf(self, X):
         dist = st.invgamma(self.alpha, self.shift, self.betta)
         return dist.pdf(X)

@@ -41,6 +41,7 @@ class JSONReport(ReportGenerator):
 
     def _image(self, plot):
         pyplot = plot.figure()
+        plot.func()(pyplot, plot.title())
         file = plot.head() + self._extension + ".png"
         pyplot.savefig(self._dir + "/" + file)
         return [self._dir + "/" + file]

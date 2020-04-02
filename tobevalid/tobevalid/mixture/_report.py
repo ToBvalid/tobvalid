@@ -74,10 +74,12 @@ class HTable(Element):
 
 
 class Plot(Element):
-    def __init__(self, parent, head, figure):
+    def __init__(self, parent, head, figure, func, title):
         Element.__init__(self, parent)
         self.__head = head
         self.__figure = figure
+        self.__func = func
+        self.__title = title
 
     def save(self, path):
         self.__figure.savefig(path + "/" + self.head + ".png")
@@ -87,6 +89,12 @@ class Plot(Element):
 
     def head(self):
         return self.__head
+
+    def func(self):
+        return self.__func
+    
+    def title(self):
+        return self.__title               
 
 
 class Head(Nest):
@@ -134,8 +142,8 @@ class Report:
             self.__elements.append(Head(string))
         return self
 
-    def image(self, figure, name):
-        self.__last().addchild(Plot(self.__last(), name, figure))
+    def image(self, figure, func, name, title):
+        self.__last().addchild(Plot(self.__last(), name, figure, func, title))
         return self
 
     def text(self, string, name=None):
@@ -177,7 +185,7 @@ class ReportGenerator:
             self._write(element)
 
         self._close()
-        self._save(path + "/" + name + self._extension)
+        self._save(name + self._extension)
 
     def _write(self, element):
         if isinstance(element, Head):

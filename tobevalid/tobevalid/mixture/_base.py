@@ -6,7 +6,10 @@ Created on Sun Nov 17 15:14:24 2019
 """
 
 import numpy as np
+import seaborn as sns
 from scipy.optimize import root_scalar
+from ._html_generator import HTMLReport
+from ._json_generator import JSONReport
 
 
 class BaseMixture:
@@ -15,7 +18,7 @@ class BaseMixture:
     This abstract class specifies an interface for all mixture classes and
     provides basic common methods for mixture models.
     """
-
+    
     def __init__(self, n_modes, tol, max_iter, **kwargs):
         self._fit = False
         self.n_modes = n_modes
@@ -24,7 +27,7 @@ class BaseMixture:
         self._loglike = 0
         self.mix = np.ones(self.n_modes)/self.n_modes
         self.nit = 0
-
+        self._ext = "mm"
         self._check_initial_parameters(**kwargs)
 
     def _check_initial_parameters(self, **kwargs):
@@ -147,7 +150,7 @@ class BaseMixture:
                 len(self.data)*lengths[i]), p=p[i]/p[i].sum(), replace=False))
         return result
 
-    def probplot(self, plt):
+    def probplot(self, plt, title = 'P-P Plot'):
         q_range = range(0, 101)
         bins = np.percentile(self.data, q_range)
         counts, bins = np.histogram(self.data, bins)
@@ -164,10 +167,24 @@ class BaseMixture:
 
         plt.xlabel('Theoretical values')
         plt.ylabel('Observed values')
-        title = 'P-P Plots'
         plt.title(title)
 
-    def qqplot(self, plt):
+    def mixtureplot(self, plt, title="Mixture"):
+
+        x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
+        # x = np.unique(self.data)
+        # x.sort()
+
+        plt.figure()
+        sns.set_style("white")
+        sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+        values = self.pdf(x)
+
+        plt.plot(x, values, label="mixture")
+        plt.legend()
+        plt.title(title)
+
+    def qqplot(self, plt, title = 'Q-Q Plot'):
         q_range = range(0, 101)
         bins = np.percentile(self.data, q_range)
         counts, bins = np.histogram(self.data, bins='scott')
@@ -185,8 +202,17 @@ class BaseMixture:
 
         plt.xlabel('Theoretical values')
         plt.ylabel('Observed values')
-        title = 'Q-Q Plots'
         plt.title(title)
+
+    def savehtml(self, path, filename):
+        report = self.report(filename)
+        htmlreport = HTMLReport()
+        htmlreport.save(report, path, filename + self._ext)
+
+    def savejson(self, path, filename):
+        report = self.report(filename)
+        jsonreport = JSONReport()
+        jsonreport.save(report, path, filename)    
 
     def params(self):
         pass    
