@@ -7,5 +7,5 @@ setup(name='tobevalid',
       author='Kaveh Babai',
       author_email='lekaveh@gmail.com',
       license='MIT',
-      packages=['tobevalid.stats', 'tobevalid.parsers', 'tobevalid.mixture'],
+      packages=['tobevalid', 'tobevalid.stats', 'tobevalid.parsers', 'tobevalid.mixture'],
       zip_safe=False)

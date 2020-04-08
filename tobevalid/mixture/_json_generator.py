@@ -20,7 +20,7 @@ import json
 class JSONReport(ReportGenerator):
 
     def __init__(self):
-        ReportGenerator.__init__(self)
+        ReportGenerator.__init__(self, dpi)
         self._extension = ".json"
 
     def _open(self):
@@ -39,11 +39,11 @@ class JSONReport(ReportGenerator):
             self.__json[head.head()] = children
         return {head.head(): children}
 
-    def _image(self, plot):
+    def _image(self, plot, dpi=None):
         pyplot = plot.figure()
         plot.func()(pyplot, plot.title())
         file = plot.head() + self._extension + ".png"
-        pyplot.savefig(self._dir + "/" + file)
+        pyplot.savefig(self._dir + "/" + file, dpi=dpi)
         return [self._dir + "/" + file]
 
     def _vtable(self, table):

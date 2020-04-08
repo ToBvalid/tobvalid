@@ -13,13 +13,14 @@ from scipy.stats import invgamma
 from scipy.stats import kurtosis
 
 
-def tobevalid(i, o=None, mode=1, t=1e-5):
+def tobevalid(i, o=None, mode=1, t=1e-5, hr=150):
 
     try:
         file_name = process_input(i)
         out = proccess_output(i, o, file_name)
         process_mode(mode)
         process_tolerance(t)
+        process_dpi(hr)
 
     except ValueError as e:
         return e
@@ -46,11 +47,11 @@ def tobevalid(i, o=None, mode=1, t=1e-5):
         gauss = GaussianMixture(mode, tol = t)
         gauss.fit(p_data)
         z = gauss.Z
-        gauss.savehtml(out, file_name)
+        gauss.savehtml(out, file_name, dpi=hr)
 
     inv = InverseGammaMixture(mode, tol=t)
     inv.fit(data, z = z)
-    inv.savehtml(out, file_name)
+    inv.savehtml(out, file_name, dpi=hr)
             
     statistics(data, inv)
     
@@ -104,6 +105,13 @@ def process_tolerance(t):
 
     if t <=0 : 
         raise ValueError("-t has to be greater than zero")   
+
+def process_dpi(d):
+    if not isinstance(d, int): 
+          raise ValueError("-d has to be integer")
+
+    if d < 72 : 
+        raise ValueError("-d has to be greater or equal to 72 ") 
 
 def statistics(B, inv):
     nB = len(B)

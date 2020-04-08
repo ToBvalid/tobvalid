@@ -204,16 +204,19 @@ class BaseMixture:
         plt.ylabel('Observed values')
         plt.title(title)
 
-    def savehtml(self, path, filename):
+    def savehtml(self, path, filename, dpi=None):
         report = self.report(filename)
-        htmlreport = HTMLReport()
+        htmlreport = HTMLReport(dpi)
         htmlreport.save(report, path, filename + self._ext)
 
-    def savejson(self, path, filename):
+    def savejson(self, path, filename, dpi=None):
         report = self.report(filename)
-        jsonreport = JSONReport()
+        jsonreport = JSONReport(dpi)
         jsonreport.save(report, path, filename)    
 
+    def report(self, filename, dpi=None):
+        pass
+    
     def params(self):
         pass    
 

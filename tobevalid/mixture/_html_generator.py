@@ -10,8 +10,8 @@ from ._report import ReportGenerator, Report, Head, Text, Lines, VTable, HTable,
 
 class HTMLReport(ReportGenerator):
 
-    def __init__(self):
-        ReportGenerator.__init__(self)
+    def __init__(self, dpi=None):
+        ReportGenerator.__init__(self, dpi)
         self._extension = ".html"
 
     def _open(self):
@@ -68,11 +68,11 @@ class HTMLReport(ReportGenerator):
             self._write(child)
         return self
 
-    def _image(self, plot):
+    def _image(self, plot, dpi=None):
         pyplot = plot.figure()
         plot.func()(pyplot, plot.title())
         file = plot.head() + self._extension + ".png"
-        pyplot.savefig(self._dir + "/" + file)
+        pyplot.savefig(self._dir + "/" + file, dpi=dpi)
         self.__html = self.__html + '<br><img src="' + file + '"><br>'
         return self
 

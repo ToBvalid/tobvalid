@@ -173,8 +173,9 @@ class Report:
 
 class ReportGenerator:
 
-    def __init__(self):
+    def __init__(self, dpi=None):
         self._extension = ""
+        self._dpi = dpi
 
     def save(self, report, path, name):
         self._open()
@@ -198,7 +199,7 @@ class ReportGenerator:
             return self._vtable(element)
 
         elif isinstance(element, Plot):
-            return self._image(element)
+            return self._image(element, self._dpi)
 
     def __open(self):
         pass
@@ -212,7 +213,7 @@ class ReportGenerator:
     def _head(self, head):
         pass
 
-    def _image(self, plot):
+    def _image(self, plot, dpi=None):
         pass
 
     def _vtable(self, table):
