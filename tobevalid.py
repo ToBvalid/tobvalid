@@ -21,11 +21,11 @@ def tobevalid(i, o=None, mode=1, t=1e-5, hr=150):
         process_mode(mode)
         process_tolerance(t)
         process_dpi(hr)
-
+        (s, data) = gp.gemmy_parse(i)
+        process_data(data)
     except ValueError as e:
         return e
 
-    (s, data) = gp.gemmy_parse(i)
     
     if s == 0:
         return "Resolution is 0"
@@ -54,7 +54,14 @@ def tobevalid(i, o=None, mode=1, t=1e-5, hr=150):
     inv.savehtml(out, file_name, dpi=hr)
             
     statistics(data, inv)
-    
+
+    if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
+        print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
+
+def process_data(data):
+    if min(data) < 0:
+        raise ValueError("Zero or minus values for B factors are observed. Please consider the structure model for re-refinement or contact the authors")    
+
 def process_input(i):
     if not os.path.exists(i):
         raise  ValueError("Input path {} doesn't exist".format(i))
