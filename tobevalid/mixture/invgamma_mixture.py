@@ -81,6 +81,20 @@ class InverseGammaMixture(BaseMixture):
                 break
         return conv
 
+    def __statistics__(self):
+        nB = len(self.data)
+        MinB = np.amin(self.data)
+        MaxB = np.amax(self.data)
+        MeanB = np.mean(self.data)
+        MedB = np.median(self.data)
+        VarB = np.var(self.data)
+        skewB = st.skew(self.data)
+        kurtsB = st.kurtosis(self.data)
+        firstQ, thirdQ = np.percentile(self.data,[25,75])
+
+        return {"Atom numbers":[nB], "Minimum B value":[MinB], 'Maximum B value':[MaxB], 'Mean':[MeanB], 'Median':[MedB], 'Variance':[VarB], 'Skewness':[skewB], 
+        'Kurtosis':[kurtsB], 'First quartile':[firstQ], 'Third quartile':[thirdQ]}    
+
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1))
 
@@ -161,6 +175,11 @@ class InverseGammaMixture(BaseMixture):
 
         report.htable(["Distribution"] + list(range(1, self.n_modes + 1)),
                       {'Mix parameters': self.mix.tolist(), 'alpha': self.alpha.tolist(), 'beta': self.betta.tolist(), 'shift': self.shift.tolist()})
+        
+        report.head('Parameters of B value distribution')
+        report.htable(["",  ""],
+                      self.__statistics__()
+                      )
         report.head("Plots")
 
         report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Inverse Gamma Mixture: {}".format(filename))

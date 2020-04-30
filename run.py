@@ -53,7 +53,7 @@ def tobevalid(i, o=None, mode=1, t=1e-5, hr=150):
     inv.fit(data, z = z)
     inv.savehtml(out, file_name, dpi=hr)
             
-    statistics(data, inv)
+    # statistics(data, inv)
 
     if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
         print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
