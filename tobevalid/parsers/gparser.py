@@ -22,7 +22,11 @@ def gemmy_resolution(file):
     return s
 
 def gemmy_parse(file):
-    st = gemmi.read_structure(file)
+    try:
+        st = gemmi.read_structure(file)
+    except RuntimeError as e:
+        raise ValueError(str(e))
+    
     B = []
     B_with_keys={}
     chains = []
