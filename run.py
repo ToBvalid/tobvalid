@@ -14,7 +14,7 @@ from scipy.stats import kurtosis
 
 
 def tobevalid(i, o=None, mode=1, t=1e-5, hr=150):
-
+    
     try:
         file_name = process_input(i)
         out = proccess_output(i, o, file_name)

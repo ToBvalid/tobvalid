@@ -4,14 +4,14 @@ Created on Mon Dec  9 15:26:01 2019
 
 @author: KavehB
 """
-
-
 import numpy as np
 import scipy.stats as st
 from scipy import special
 import matplotlib.pyplot as plt
 import numpy as np
-
+import pkgutil
+import io
+import seaborn as sns
 
 from ._base import BaseMixture
 from ._report import Report
@@ -20,6 +20,7 @@ class InverseGammaMixture(BaseMixture):
     def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._ext = "_igmm"
+        
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -94,6 +95,33 @@ class InverseGammaMixture(BaseMixture):
 
         return {"Atom numbers":[nB], "Minimum B value":[MinB], 'Maximum B value':[MaxB], 'Mean':[MeanB], 'Median':[MedB], 'Variance':[VarB], 'Skewness':[skewB], 
         'Kurtosis':[kurtsB], 'First quartile':[firstQ], 'Third quartile':[thirdQ]}    
+    
+    def albeplot(self, plt, title = 'Alpha-Beta Plot'):
+        
+        if(self.n_modes > 2):
+            return
+
+        F = io.StringIO(pkgutil.get_data("tobevalid", "templates/albe{}.txt".format(self.n_modes)).decode('utf-8-sig'))
+    
+        for data in F:
+            albe = data.split("===")
+            al = albe[0].split(",")
+            be = albe[1].split(",")
+            al = [float(x) for x in al]
+            be = [float(x) for x in be]
+        F.close()
+
+
+        plt.figure()
+        for i in range(self.n_modes):
+            plt.plot(self.alpha[i], np.sqrt(self.betta[i]), marker = 'o')
+        
+        sp = sns.kdeplot(al, np.sqrt(be), shade=True, shade_lowest=False, cmap="Reds", n_levels=30, cbar=True)
+        sp.set(xlim=(0,10))
+        sp.set(ylim=(0,30))
+        plt.xlabel(r'$\alpha$')
+        plt.ylabel(r'$\sqrt{\beta}$')
+        plt.title(title)
 
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1))
@@ -185,7 +213,8 @@ class InverseGammaMixture(BaseMixture):
         report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Inverse Gamma Mixture: {}".format(filename))
         report.image(plt, self.probplot, filename +  ".pp" + self._ext, "P-P Plot: {}".format(filename))
         report.image(plt, self.qqplot, filename +  ".qq" + self._ext, "Q-Q Plot: {}".format(filename))
-        
+        if(self.n_modes < 3):
+            report.image(plt, self.albeplot, filename +  ".albe" + self._ext, "'Alpha-Beta Plot': {}".format(filename))
         
         return report
         

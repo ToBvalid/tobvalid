@@ -151,6 +151,7 @@ class BaseMixture:
         return result
 
     def probplot(self, plt, title = 'P-P Plot'):
+        plt.figure()
         q_range = range(0, 101)
         bins = np.percentile(self.data, q_range)
         counts, bins = np.histogram(self.data, bins)
@@ -185,6 +186,7 @@ class BaseMixture:
         plt.title(title)
 
     def qqplot(self, plt, title = 'Q-Q Plot'):
+        plt.figure()
         q_range = range(0, 101)
         bins = np.percentile(self.data, q_range)
         counts, bins = np.histogram(self.data, bins='scott')
