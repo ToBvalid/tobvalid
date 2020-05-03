@@ -1,2 +1,7 @@
+<<<<<<< HEAD
 include ./templates/albe1.txt
 include ./templates/albe2.txt
+=======
+include templates/albe1.txt
+include templates/albe2.txt
+>>>>>>> 108fe99ad8783ff59cc4957cf40423fe99f29b12
