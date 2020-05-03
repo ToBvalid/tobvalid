@@ -13,6 +13,7 @@ note: please use github clone rather than pip installation
 """
 import numpy as np 
 import gemmi 
+import warnings
 
 def gemmy_resolution(file):
     st = gemmi.read_structure(file)
@@ -26,7 +27,12 @@ def gemmy_parse(file):
         st = gemmi.read_structure(file)
     except RuntimeError as e:
         raise ValueError(str(e))
-    
+    s=st.resolution
+
+    if s == "" or s == 0:
+        warnings.warn("Resolution is not available. Default 2A will be used..")
+        s = 2
+
     B = []
     B_with_keys={}
     chains = []
@@ -48,5 +54,5 @@ def gemmy_parse(file):
                 else: continue 
     # The array named B gives you B factors of all atoms of the structure
     B = np.asarray(B)
-    s=st.resolution
+
     return (s, B) 

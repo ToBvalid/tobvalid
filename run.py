@@ -5,6 +5,7 @@ from tobevalid.mixture.invgamma_mixture import InverseGammaMixture
 import tobevalid.stats.silverman as sv
 import tobevalid.parsers.gparser as gp
 import tobevalid.stats.pheight as ph
+import tobevalid.local.analysis as lc
 import os
 import shutil
 import numpy as np
@@ -13,19 +14,26 @@ from scipy.stats import invgamma
 from scipy.stats import kurtosis
 
 
-def tobevalid(i, o=None, mode=1, t=1e-5, hr=150):
+def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     
+    mode = m
     try:
         file_name = process_input(i)
         out = proccess_output(i, o, file_name)
+        process_analysis(a)
         process_mode(mode)
         process_tolerance(t)
         process_dpi(hr)
-        (s, data) = gp.gemmy_parse(i)
-        process_data(data)
+        if a in ['all', 'local']:
+            lc.local_analysis(i, out)
+        if a in ['all', 'global']:   
+            (s, data) = gp.gemmy_parse(i)
+            process_data(data)
     except ValueError as e:
         return e
 
+    if a =='local':
+        return
     
     if s == 0:
         return "Resolution is 0"
@@ -97,14 +105,21 @@ def proccess_output(i, o, file_name):
     return out
 
 
+def process_analysis(a):
+    if a in ['all', 'global', 'local']:
+        return
+
+    raise ValueError("-a has to be 'all', 'global' or 'local'")
+
+
 def process_mode(mode):
     if mode == 'auto':
         return
     if not isinstance(mode, int): 
-          raise ValueError("-mode has to be integer or 'auto'")
+          raise ValueError("-m has to be integer or 'auto'")
 
     if mode < 1: 
-          raise ValueError("-mode has to be greater than zero or equal to 'auto'")    
+          raise ValueError("-m has to be greater than zero or equal to 'auto'")    
 
 def process_tolerance(t):
     if not isinstance(t, float) and not isinstance(t, int): 
