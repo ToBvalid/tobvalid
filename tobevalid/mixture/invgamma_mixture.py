@@ -123,6 +123,24 @@ class InverseGammaMixture(BaseMixture):
         plt.ylabel(r'$\sqrt{\beta}$')
         plt.title(title)
 
+    def clusterplot(self, plt, title="Clusters"):
+        if self.n_modes == 1:
+            return
+        plt.figure()
+        clusters = self.clusters()
+        for cluster in clusters:
+            inv = InverseGammaMixture(1, tol=self.tol)
+            inv.fit(cluster)
+            x = np.linspace(start=min(cluster), stop=max(cluster), num=1000)
+
+            sns.set_style("white")
+            sns.distplot(cluster, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+            values = inv.pdf(x)
+            plt.plot(x, values)
+        
+        plt.title(title)
+            
+
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1))
 
@@ -211,6 +229,8 @@ class InverseGammaMixture(BaseMixture):
         report.head("Plots")
 
         report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Inverse Gamma Mixture: {}".format(filename))
+        if(self.n_modes > 1):
+            report.image(plt, self.clusterplot, filename + ".clusters" + self._ext, "Clusters: {}".format(filename))  
         report.image(plt, self.probplot, filename +  ".pp" + self._ext, "P-P Plot: {}".format(filename))
         report.image(plt, self.qqplot, filename +  ".qq" + self._ext, "Q-Q Plot: {}".format(filename))
         if(self.n_modes < 3):

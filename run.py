@@ -60,7 +60,9 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     inv = InverseGammaMixture(mode, tol=t)
     inv.fit(data, z = z)
     inv.savehtml(out, file_name, dpi=hr)
-            
+
+
+
     # statistics(data, inv)
 
     if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
