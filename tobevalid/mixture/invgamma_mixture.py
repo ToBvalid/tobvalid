@@ -8,19 +8,21 @@ import numpy as np
 import scipy.stats as st
 from scipy import special
 import matplotlib.pyplot as plt
+import matplotlib.colors as cl
 import numpy as np
 import pkgutil
 import io
 import seaborn as sns
+import pandas as pd
 
 from ._base import BaseMixture
 from ._report import Report
+
 
 class InverseGammaMixture(BaseMixture):
     def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._ext = "_igmm"
-        
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -91,18 +93,19 @@ class InverseGammaMixture(BaseMixture):
         VarB = np.var(self.data)
         skewB = st.skew(self.data)
         kurtsB = st.kurtosis(self.data)
-        firstQ, thirdQ = np.percentile(self.data,[25,75])
+        firstQ, thirdQ = np.percentile(self.data, [25, 75])
 
-        return {"Atom numbers":[nB], "Minimum B value":[MinB], 'Maximum B value':[MaxB], 'Mean':[MeanB], 'Median':[MedB], 'Variance':[VarB], 'Skewness':[skewB], 
-        'Kurtosis':[kurtsB], 'First quartile':[firstQ], 'Third quartile':[thirdQ]}    
-    
-    def albeplot(self, plt, title = 'Alpha-Beta Plot'):
-        
-        if(self.n_modes > 2):
+        return {"Atom numbers": [nB], "Minimum B value": [MinB], 'Maximum B value': [MaxB], 'Mean': [MeanB], 'Median': [MedB], 'Variance': [VarB], 'Skewness': [skewB],
+                'Kurtosis': [kurtsB], 'First quartile': [firstQ], 'Third quartile': [thirdQ]}
+
+    def albeplot(self, plt, title='Alpha-Beta Plot'):
+
+        if(self.n_modes > 1):
             return
 
-        F = io.StringIO(pkgutil.get_data("tobevalid", "templates/albe{}.txt".format(self.n_modes)).decode('utf-8-sig'))
-    
+        F = io.StringIO(pkgutil.get_data(
+            "tobevalid", "templates/albe{}.txt".format(self.n_modes)).decode('utf-8-sig'))
+
         for data in F:
             albe = data.split("===")
             al = albe[0].split(",")
@@ -111,35 +114,51 @@ class InverseGammaMixture(BaseMixture):
             be = [float(x) for x in be]
         F.close()
 
-
         plt.figure()
         for i in range(self.n_modes):
-            plt.plot(self.alpha[i], np.sqrt(self.betta[i]), marker = 'o')
-        
-        sp = sns.kdeplot(al, np.sqrt(be), shade=True, shade_lowest=False, cmap="Reds", n_levels=30, cbar=True)
-        sp.set(xlim=(0,10))
-        sp.set(ylim=(0,30))
+            plt.plot(self.alpha[i], np.sqrt(self.betta[i]), marker='o')
+
+        sp = sns.kdeplot(al, np.sqrt(be), shade=True,
+                         shade_lowest=False, cmap="Reds", n_levels=30, cbar=True)
+        sp.set(xlim=(0, 10))
+        sp.set(ylim=(0, 30))
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\sqrt{\beta}$')
         plt.title(title)
 
     def clusterplot(self, plt, title="Clusters"):
+
         if self.n_modes == 1:
             return
         plt.figure()
         clusters = self.clusters()
-        for cluster in clusters:
-            inv = InverseGammaMixture(1, tol=self.tol)
-            inv.fit(cluster)
-            x = np.linspace(start=min(cluster), stop=max(cluster), num=1000)
+        x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
+        clust_num = np.concatenate(
+            (np.zeros(len(clusters[0])), np.ones(len(clusters[1]))),  axis=None)
+        cl_values = np.concatenate((clusters[0], clusters[1]),  axis=None)
 
-            sns.set_style("white")
-            sns.distplot(cluster, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
-            values = inv.pdf(x)
-            plt.plot(x, values)
-        
+        for i in np.arange(2, self.n_modes):
+            clust_num = np.concatenate((clust_num, np.full(len(clusters[i]), i)),  axis=None)
+            cl_values = np.concatenate((cl_values, clusters[i]),  axis=None)
+
+        df = pd.DataFrame({'BValues': cl_values, 'Clusters': clust_num})
+        counts, bins = np.histogram(cl_values, bins=np.histogram(self.data, bins='scott', density=True)[1], density=True)
+
+        groups = df.groupby([pd.cut(df.BValues, bins)])
+        df_bins = pd.cut(df.BValues, bins)
+        df_clust_per = ((groups.Clusters.sum()/groups.Clusters.count())).values
+
+
+        norm = cl.Normalize(np.nanmin(df_clust_per),
+                             np.nanmax(df_clust_per))
+        colors = plt.cm.get_cmap(plt.get_cmap('PRGn'))(norm(df_clust_per))
+        plt.bar(bins[:-1], counts, width=(bins[1:] - bins[:-1]),
+                align="edge", color=colors)
+
+        values = self.pdf(x)
+        plt.plot(x, values)
+
         plt.title(title)
-            
 
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1))
@@ -206,38 +225,46 @@ class InverseGammaMixture(BaseMixture):
         return True
 
     def params(self):
-            return {"mix": self.mix, "alpha": self.alpha, "betta":self.betta, "shift":self.shift}
+        return {"mix": self.mix, "alpha": self.alpha, "betta": self.betta, "shift": self.shift}
 
     def report(self, filename):
-    
-        report = Report("Expecation Maximization of Inverse Gamma Mixture Model")
+
+        report = Report(
+            "Expecation Maximization of Inverse Gamma Mixture Model")
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], 
-                                                                ["Tolerance", self.tol, 1e-05],
-                                                                 ["Maximum Iterations", self.max_iter, 100]])
+                                                                ["Number of modes",
+                                                                    self.n_modes, 1],
+                                                                ["Tolerance",
+                                                                    self.tol, 1e-05],
+                                                                ["Maximum Iterations", self.max_iter, 100]])
 
         report.head("Output")
 
         report.htable(["Distribution"] + list(range(1, self.n_modes + 1)),
                       {'Mix parameters': self.mix.tolist(), 'alpha': self.alpha.tolist(), 'beta': self.betta.tolist(), 'shift': self.shift.tolist()})
-        
+
         report.head('Parameters of B value distribution')
         report.htable(["",  ""],
                       self.__statistics__()
                       )
         report.head("Plots")
 
-        report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Inverse Gamma Mixture: {}".format(filename))
+        report.image(plt, self.mixtureplot, filename + ".mixture" +
+                     self._ext, "Inverse Gamma Mixture: {}".format(filename))
         if(self.n_modes > 1):
-            report.image(plt, self.clusterplot, filename + ".clusters" + self._ext, "Clusters: {}".format(filename))  
-        report.image(plt, self.probplot, filename +  ".pp" + self._ext, "P-P Plot: {}".format(filename))
-        report.image(plt, self.qqplot, filename +  ".qq" + self._ext, "Q-Q Plot: {}".format(filename))
-        if(self.n_modes < 3):
-            report.image(plt, self.albeplot, filename +  ".albe" + self._ext, "'Alpha-Beta Plot': {}".format(filename))
-        
+            report.image(plt, self.clusterplot, filename +
+                         ".clusters" + self._ext, "Clusters: {}".format(filename))
+        # report.image(plt, self.probplot, filename + ".pp" +
+        #              self._ext, "P-P Plot: {}".format(filename))
+        # report.image(plt, self.qqplot, filename + ".qq" +
+        #              self._ext, "Q-Q Plot: {}".format(filename))
+        # if(self.n_modes == 1):
+        #     report.image(plt, self.albeplot, filename + ".albe" +
+        #                  self._ext, "'Alpha-Beta Plot': {}".format(filename))
+
         return report
-        
+
     def _pdf(self, X):
         dist = st.invgamma(self.alpha, self.shift, self.betta)
         return dist.pdf(X)

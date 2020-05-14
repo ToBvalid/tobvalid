@@ -10,7 +10,7 @@ import seaborn as sns
 from scipy.optimize import root_scalar
 from ._html_generator import HTMLReport
 from ._json_generator import JSONReport
-
+import statsmodels.api as sm
 
 class BaseMixture:
     """Base class for mixture models.
@@ -18,7 +18,7 @@ class BaseMixture:
     This abstract class specifies an interface for all mixture classes and
     provides basic common methods for mixture models.
     """
-    
+
     def __init__(self, n_modes, tol, max_iter, **kwargs):
         self._fit = False
         self.n_modes = n_modes
@@ -83,6 +83,7 @@ class BaseMixture:
                 break
         self.nit = n_iter
         self._fit = True
+        self.__ppplot = sm.ProbPlot(self.data, self, fit = False)
 
     def loglike(self):
         return self._loglike
@@ -141,70 +142,43 @@ class BaseMixture:
 
     def clusters(self):
         result = []
-        p = self.mixpdf(self.data).T
-        p_sum = p.sum()
-        lengths = p.sum(axis=1)/p_sum
-
         for i in np.arange(self.n_modes):
-            result.append(np.random.choice(self.data.tolist(), int(
-                len(self.data)*lengths[i]), p=p[i]/p[i].sum(), replace=False))
+            result.append([])
+
+        for d, z in zip(self.data, self.Z):
+            result[np.random.choice(np.arange(self.n_modes), 1, p=z)[0]].append(d)
+            
         return result
 
-    def probplot(self, plt, title = 'P-P Plot'):
-        plt.figure()
-        q_range = range(0, 101)
-        bins = np.percentile(self.data, q_range)
-        counts, bins = np.histogram(self.data, bins)
-        cum = np.cumsum(counts)
-        cum = cum / max(cum)
-        cdfs = self.cdf(bins)[1:]
-
-        plt.plot(cdfs, cum, "o")
-        min_value = np.floor(np.min([cdfs.min(), cum.min()]))
-        max_value = np.ceil(np.max([cdfs.max(), cum.max()]))
-        plt.plot([min_value, max_value], [min_value, max_value], 'r--')
-        plt.xlim(min_value, max_value)
-        plt.ylim(min_value, max_value)
-
-        plt.xlabel('Theoretical values')
-        plt.ylabel('Observed values')
-        plt.title(title)
 
     def mixtureplot(self, plt, title="Mixture"):
-
+    
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
-        # x = np.unique(self.data)
-        # x.sort()
 
         plt.figure()
         sns.set_style("white")
-        sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(edgecolor="k", linewidth=2), norm_hist=True)
+        sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
+            edgecolor="k", linewidth=2), norm_hist=True)
         values = self.pdf(x)
 
         plt.plot(x, values, label="mixture")
         plt.legend()
         plt.title(title)
 
-    def qqplot(self, plt, title = 'Q-Q Plot'):
+    def probplot(self, plt, title='P-P Plot'):
         plt.figure()
-        q_range = range(0, 101)
-        bins = np.percentile(self.data, q_range)
-        counts, bins = np.histogram(self.data, bins='scott')
-
-        cum = np.cumsum(counts)
-        cum = cum / max(cum)
-
-        ppf_data = self.ppf(cum)
-        plt.plot(ppf_data, bins[1:], "o")
-        min_value = min(self.data)
-        max_value = max(self.data)
-        plt.plot([min_value, max_value], [min_value, max_value], 'r--')
-        plt.xlim(min_value, max_value)
-        plt.ylim(min_value, max_value)
-
-        plt.xlabel('Theoretical values')
-        plt.ylabel('Observed values')
+        self.__ppplot.ppplot(line='45')
         plt.title(title)
+
+    
+
+    def qqplot(self, plt, title='Q-Q Plot'):
+        plt.figure() 
+        self.__ppplot.qqplot(line='45')
+        plt.xlim(min(self.data), max(self.data))
+        plt.ylim(min(self.data), max(self.data))
+        plt.title(title)
+
 
     def savehtml(self, path, filename, dpi=None):
         report = self.report(filename)
@@ -214,13 +188,13 @@ class BaseMixture:
     def savejson(self, path, filename, dpi=None):
         report = self.report(filename)
         jsonreport = JSONReport(dpi)
-        jsonreport.save(report, path, filename)    
+        jsonreport.save(report, path, filename)
 
     def report(self, filename, dpi=None):
         pass
-    
+
     def params(self):
-        pass    
+        pass
 
     def _check_initial_custom_parameters(self, **kwargs):
         pass

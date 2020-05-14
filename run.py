@@ -15,7 +15,7 @@ from scipy.stats import kurtosis
 
 
 def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
-    
+
     mode = m
     try:
         file_name = process_input(i)
@@ -26,41 +26,39 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
         process_dpi(hr)
         if a in ['all', 'local']:
             lc.local_analysis(i, out)
-        if a in ['all', 'global']:   
+        if a in ['all', 'global']:
             (s, data) = gp.gemmy_parse(i)
             process_data(data)
     except ValueError as e:
         return e
 
-    if a =='local':
+    if a == 'local':
         return
-    
+
     if s == 0:
         return "Resolution is 0"
 
     if len(data) <= 100:
-        return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"    
-    
+        return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
 
     z = None
 
     if mode != 1:
-        p_data = ph.peak_height(data, s) 
+        p_data = ph.peak_height(data, s)
 
     if mode == 'auto':
         modes, kernel = sv.kde_silverman(p_data)
         mode = modes[0]
 
     if mode > 1:
-        gauss = GaussianMixture(mode, tol = t)
+        gauss = GaussianMixture(mode, tol=t)
         gauss.fit(p_data)
         z = gauss.Z
         gauss.savehtml(out, file_name, dpi=hr)
 
     inv = InverseGammaMixture(mode, tol=t)
-    inv.fit(data, z = z)
+    inv.fit(data, z=z)
     inv.savehtml(out, file_name, dpi=hr)
-
 
 
     # statistics(data, inv)
@@ -68,19 +66,22 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
         print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
+
 def process_data(data):
     if min(data) < 0:
-        raise ValueError("Zero or minus values for B factors are observed. Please consider the structure model for re-refinement or contact the authors")    
+        raise ValueError(
+            "Zero or minus values for B factors are observed. Please consider the structure model for re-refinement or contact the authors")
+
 
 def process_input(i):
     if not os.path.exists(i):
-        raise  ValueError("Input path {} doesn't exist".format(i))
+        raise ValueError("Input path {} doesn't exist".format(i))
 
     if not os.path.isfile(i):
         raise ValueError("{} is not file".format(i))
 
-                
-    return  os.path.basename(os.path.splitext(i)[0])
+    return os.path.basename(os.path.splitext(i)[0])
+
 
 def proccess_output(i, o, file_name):
 
@@ -92,18 +93,18 @@ def proccess_output(i, o, file_name):
             raise ValueError("output path {} doesn't exist".format(o))
 
         if not os.path.isdir(o):
-            raise ValueError( "{} is not directory".format(o))
+            raise ValueError("{} is not directory".format(o))
         out = o
-    
+
     out = out + "/" + file_name
-   
+
     try:
         if os.path.exists(out) and os.path.isdir(out):
-          shutil.rmtree(out)
+            shutil.rmtree(out)
         os.mkdir(out)
     except OSError:
         raise ValueError("Creation of the directory %s failed" % out)
-    
+
     return out
 
 
@@ -117,25 +118,28 @@ def process_analysis(a):
 def process_mode(mode):
     if mode == 'auto':
         return
-    if not isinstance(mode, int): 
-          raise ValueError("-m has to be integer or 'auto'")
+    if not isinstance(mode, int):
+        raise ValueError("-m has to be integer or 'auto'")
 
-    if mode < 1: 
-          raise ValueError("-m has to be greater than zero or equal to 'auto'")    
+    if mode < 1:
+        raise ValueError("-m has to be greater than zero or equal to 'auto'")
+
 
 def process_tolerance(t):
-    if not isinstance(t, float) and not isinstance(t, int): 
-          raise ValueError("-t has to be float")
+    if not isinstance(t, float) and not isinstance(t, int):
+        raise ValueError("-t has to be float")
 
-    if t <=0 : 
-        raise ValueError("-t has to be greater than zero")   
+    if t <= 0:
+        raise ValueError("-t has to be greater than zero")
+
 
 def process_dpi(d):
-    if not isinstance(d, int): 
-          raise ValueError("-d has to be integer")
+    if not isinstance(d, int):
+        raise ValueError("-d has to be integer")
 
-    if d < 72 : 
-        raise ValueError("-d has to be greater or equal to 72 ") 
+    if d < 72:
+        raise ValueError("-d has to be greater or equal to 72 ")
+
 
 def statistics(B, inv):
     nB = len(B)
@@ -146,11 +150,11 @@ def statistics(B, inv):
     VarB = np.var(B)
     skewB = skew(B)
     kurtsB = kurtosis(B)
-    firstQ, thirdQ = np.percentile(B,[25,75])
+    firstQ, thirdQ = np.percentile(B, [25, 75])
     alpha = inv.alpha
     beta = inv.betta
     b0 = inv.shift
-        
+
     print('--------------------------------------------------')
     print('Parameters of B value distribution')
     print('Atom numbers   :', nB)
@@ -167,7 +171,7 @@ def statistics(B, inv):
     print('Beta           :', beta)
     print('B0             :', b0)
     print('--------------------------------------------------')
-    print(' ')           
+    print(' ')
 
 
 if __name__ == '__main__':

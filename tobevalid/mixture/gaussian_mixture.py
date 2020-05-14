@@ -51,7 +51,7 @@ class GaussianMixture(BaseMixture):
         return True
 
     def params(self):
-        return {"mix": self.mix, "mu": self.mu, "sigma":self.sigma}
+        return {"mix": self.mix, "mu": self.mu, "sigma": self.sigma}
 
     def _pdf(self, X):
         u = (X - self.mu) / np.abs(self.sigma)
@@ -77,8 +77,7 @@ class GaussianMixture(BaseMixture):
                       {'Mix parameters': self.mix.tolist(), 'Mu': self.mu.tolist(), 'Sigma': self.sigma.tolist()})
         report.head("Plots")
 
-        report.image(plt, self.mixtureplot, filename + ".mixture" + self._ext, "Gaussian Mixture: {}".format(filename))
+        report.image(plt, self.mixtureplot, filename + ".mixture" +
+                     self._ext, "Gaussian Mixture: {}".format(filename))
 
         return report
-
- 
