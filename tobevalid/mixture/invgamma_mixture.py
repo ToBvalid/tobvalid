@@ -255,13 +255,13 @@ class InverseGammaMixture(BaseMixture):
         if(self.n_modes > 1):
             report.image(plt, self.clusterplot, filename +
                          ".clusters" + self._ext, "Clusters: {}".format(filename))
-        # report.image(plt, self.probplot, filename + ".pp" +
-        #              self._ext, "P-P Plot: {}".format(filename))
-        # report.image(plt, self.qqplot, filename + ".qq" +
-        #              self._ext, "Q-Q Plot: {}".format(filename))
-        # if(self.n_modes == 1):
-        #     report.image(plt, self.albeplot, filename + ".albe" +
-        #                  self._ext, "'Alpha-Beta Plot': {}".format(filename))
+        report.image(plt, self.probplot, filename + ".pp" +
+                     self._ext, "P-P Plot: {}".format(filename))
+        report.image(plt, self.qqplot, filename + ".qq" +
+                     self._ext, "Q-Q Plot: {}".format(filename))
+        if(self.n_modes == 1):
+            report.image(plt, self.albeplot, filename + ".albe" +
+                         self._ext, "'Alpha-Beta Plot': {}".format(filename))
 
         return report
 
