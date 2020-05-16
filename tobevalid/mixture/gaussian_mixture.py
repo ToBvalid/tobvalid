@@ -14,10 +14,12 @@ from ._base import BaseMixture
 from ._report import Report
 
 
+
 class GaussianMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-05, max_iter=100):
-        BaseMixture.__init__(self, n_modes, tol, max_iter)
+    def __init__(self, n_modes=1, tol=1e-05, max_iter=100, **kwargs):
+        BaseMixture.__init__(self, n_modes, tol, max_iter, **kwargs)
         self._ext = "_gmm"
+
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -67,6 +69,14 @@ class GaussianMixture(BaseMixture):
     def report(self, filename):
 
         report = Report("Expecation Maximization of Gaussian Mixture Model")
+        if (self._fit == True):
+            report.head("Mode search (Silverman Method)")
+            report.htable(["Mode"] + list(range(1, self.n_modes + 1)),
+                      {' ': self._modes})   
+
+            report.image(plt, self.modeplot, filename + ".silverman" +
+                     self._ext, "Modes: {}".format(filename))                      
+        
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
                                                                 ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 100]])
@@ -79,5 +89,7 @@ class GaussianMixture(BaseMixture):
 
         report.image(plt, self.mixtureplot, filename + ".mixture" +
                      self._ext, "Gaussian Mixture: {}".format(filename))
+
+                             
 
         return report

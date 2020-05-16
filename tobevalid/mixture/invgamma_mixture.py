@@ -21,6 +21,10 @@ from ._report import Report
 
 class InverseGammaMixture(BaseMixture):
     def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
+
+        if(n_modes == 'auto'):
+           n_modes = 1
+           
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._ext = "_igmm"
 
@@ -28,7 +32,7 @@ class InverseGammaMixture(BaseMixture):
         return
 
     def _check_parameters(self, X, **kwargs):
-        if self._fit == False and not("z" in kwargs) and self.n_modes > 1:
+        if self._converged == False and not("z" in kwargs) and self.n_modes > 1:
             raise ValueError("Inverse Gamma Mixture requires 'z'")
 
     def _init_parameters(self, **kwargs):

@@ -46,15 +46,14 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     if mode != 1:
         p_data = ph.peak_height(data, s)
 
-    if mode == 'auto':
-        modes, kernel = sv.kde_silverman(p_data)
-        mode = modes[0]
+    # if mode == 'auto':
 
-    if mode > 1:
+    if mode =='auto' or mode > 1:
         gauss = GaussianMixture(mode, tol=t)
         gauss.fit(p_data)
         z = gauss.Z
         gauss.savehtml(out, file_name, dpi=hr)
+        mode = gauss.n_modes 
 
     inv = InverseGammaMixture(mode, tol=t)
     inv.fit(data, z=z)

@@ -11,6 +11,7 @@ from scipy.optimize import root_scalar
 from ._html_generator import HTMLReport
 from ._json_generator import JSONReport
 import statsmodels.api as sm
+from ..stats import kde_silverman
 
 class BaseMixture:
     """Base class for mixture models.
@@ -20,8 +21,14 @@ class BaseMixture:
     """
 
     def __init__(self, n_modes, tol, max_iter, **kwargs):
-        self._fit = False
+        self._converged = False
         self.n_modes = n_modes
+        self._fit = False 
+
+        if n_modes == 'auto':
+            self.n_modes = 1
+            self._fit = True 
+
         self.tol = tol
         self.max_iter = max_iter
         self._loglike = 0
@@ -57,6 +64,13 @@ class BaseMixture:
         self._check_parameters(X, **kwargs)
 
         self.data = X
+        if (self._fit == True):
+            modes, kernel = kde_silverman(self.data)
+            self.n_modes = modes[0]
+            self._kernel = kernel
+            self._modes =  modes[1]
+            self.mix = np.ones(self.n_modes)/self.n_modes
+
         self.data_n = np.repeat(
             self.data[np.newaxis, ...], self.n_modes, axis=0).T
 
@@ -82,7 +96,7 @@ class BaseMixture:
                 self._converged_ = True
                 break
         self.nit = n_iter
-        self._fit = True
+        self._converged = True
         self.__ppplot = sm.ProbPlot(self.data, self, fit = False)
 
     def loglike(self):
@@ -158,10 +172,10 @@ class BaseMixture:
         plt.figure()
         sns.set_style("white")
         sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
-            edgecolor="k", linewidth=2), norm_hist=True)
+            edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
         values = self.pdf(x)
 
-        plt.plot(x, values, label="mixture")
+        plt.plot(x, values, label="mixture", color='black')
         plt.legend()
         plt.title(title)
 
@@ -179,6 +193,22 @@ class BaseMixture:
         plt.ylim(min(self.data), max(self.data))
         plt.title(title)
 
+    def modeplot(self, plt, title="Modes"):
+        
+        x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
+
+        plt.figure()
+        sns.set_style("white")
+        sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
+            edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
+        values = self._kernel(x)
+
+        plt.plot(x, values, color='black')
+        for mode in self._modes:
+            plt.plot(mode, self._kernel(mode), marker="*", label=mode)
+
+        plt.legend()
+        plt.title(title)
 
     def savehtml(self, path, filename, dpi=None):
         report = self.report(filename)
