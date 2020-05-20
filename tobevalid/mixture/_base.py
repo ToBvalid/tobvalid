@@ -139,7 +139,7 @@ class BaseMixture:
         ppf = self._ppf(p)
         low = np.min(ppf)
         high = np.max(ppf)
-        return root_scalar(lambda x: self.cdf(x) - p, method='bisect', bracket=[low, high], maxiter=10).root
+        return root_scalar(lambda x: self.cdf(x) - p, method='brentq', bracket=[low, high], maxiter=10).root
 
     def mixpdf(self, X):
         if isinstance(X, (np.ndarray)):
@@ -181,17 +181,32 @@ class BaseMixture:
 
     def probplot(self, plt, title='P-P Plot'):
         plt.figure()
-        self.__ppplot.ppplot(line='45')
+        self.__ppplot.ppplot(line='45', color='blue')
         plt.title(title)
 
     
 
     def qqplot(self, plt, title='Q-Q Plot'):
+
+        x = np.sort(self.data)
+        n = x.size
+        y = np.arange(1, n+1) / n
+        if( n > 200):
+            k = n//200
+        else:
+            k = 1           
+        x1 = self.ppf(y[:-1:k])
         plt.figure() 
-        self.__ppplot.qqplot(line='45')
+
+        line = np.linspace(min(self.data), max(self.data), 100)
+        plt.plot(x1, x[:-1:k], linewidth = 6, color='blue')
+        plt.plot(line, line , "r-")
         plt.xlim(min(self.data), max(self.data))
         plt.ylim(min(self.data), max(self.data))
+        plt.xlabel("Theoretical Quantiles")
+        plt.ylabel("Sample Quantiles")
         plt.title(title)
+        
 
     def modeplot(self, plt, title="Modes"):
         

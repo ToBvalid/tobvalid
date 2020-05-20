@@ -51,7 +51,8 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     if mode =='auto' or mode > 1:
         gauss = GaussianMixture(mode, tol=t)
         gauss.fit(p_data)
-        z = gauss.Z
+        if gauss.n_modes > 1:
+            z = gauss.Z[:, ::-1]
         gauss.savehtml(out, file_name, dpi=hr)
         mode = gauss.n_modes 
 

@@ -10,10 +10,11 @@ from scipy import special
 import matplotlib.pyplot as plt
 import matplotlib.colors as cl
 import numpy as np
-import pkgutil
-import io
+import os
+import sys
 import seaborn as sns
 import pandas as pd
+from matplotlib import  ticker
 
 from ._base import BaseMixture
 from ._report import Report
@@ -102,39 +103,40 @@ class InverseGammaMixture(BaseMixture):
         return {"Atom numbers": [nB], "Minimum B value": [MinB], 'Maximum B value': [MaxB], 'Mean': [MeanB], 'Median': [MedB], 'Variance': [VarB], 'Skewness': [skewB],
                 'Kurtosis': [kurtsB], 'First quartile': [firstQ], 'Third quartile': [thirdQ]}
 
+
     def albeplot(self, plt, title='Alpha-Beta Plot'):
 
         if(self.n_modes > 1):
             return
-
-        F = io.StringIO(pkgutil.get_data(
-            "tobevalid", "templates/albe{}.txt".format(self.n_modes)).decode('utf-8-sig'))
-
-        for data in F:
-            albe = data.split("===")
-            al = albe[0].split(",")
-            be = albe[1].split(",")
-            al = [float(x) for x in al]
-            be = [float(x) for x in be]
-        F.close()
-
-        plt.figure()
+        
+   
+        fig, ax = plt.subplots()
         for i in range(self.n_modes):
-            plt.plot(self.alpha[i], np.sqrt(self.betta[i]), marker='o')
+            ax.plot(self.alpha[i], np.sqrt(self.betta[i]), marker='o')
 
-        sp = sns.kdeplot(al, np.sqrt(be), shade=True,
-                         shade_lowest=False, cmap="Reds", n_levels=30, cbar=True)
-        sp.set(xlim=(0, 10))
-        sp.set(ylim=(0, 30))
+       
+        d = os.path.dirname(sys.modules["tobevalid"].__file__)
+        xx = np.load(os.path.join(d, "templates/xx.npy"))
+        yy = np.load(os.path.join(d, "templates/yy.npy"))
+        kde = np.load(os.path.join(d, "templates/albe_kde.npy"))
+
+        N=30
+        locator = ticker.MaxNLocator(N + 1, min_n_ticks=N)
+        lev = locator.tick_values(kde.min(), kde.max())
+
+        cfset = ax.contourf(xx, yy, kde, cmap='Reds', levels=lev[1:])
+        cbar = fig.colorbar(cfset)
+
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\sqrt{\beta}$')
         plt.title(title)
+
 
     def clusterplot(self, plt, title="Clusters"):
 
         if self.n_modes == 1:
             return
-        plt.figure()
+        fig = plt.figure()
         clusters = self.clusters()
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
         clust_num = np.concatenate(
@@ -263,9 +265,11 @@ class InverseGammaMixture(BaseMixture):
                      self._ext, "P-P Plot: {}".format(filename))
         report.image(plt, self.qqplot, filename + ".qq" +
                      self._ext, "Q-Q Plot: {}".format(filename))
+                             
         if(self.n_modes == 1):
-            report.image(plt, self.albeplot, filename + ".albe" +
+             report.image(plt, self.albeplot, filename + ".albe" +
                          self._ext, "'Alpha-Beta Plot': {}".format(filename))
+
 
         return report
 

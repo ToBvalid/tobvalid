@@ -9,5 +9,5 @@ setup(name='tobevalid',
       license='MIT',
       packages=find_packages(include=['tobevalid', 'tobevalid.*']),
       zip_safe=False,
-      package_data={'tobevalid': ['templates/albe1.txt','templates/albe2.txt']}
+      package_data={'tobevalid': ['templates/albe1.txt','templates/albe2.txt', 'templates/xx.npy', 'templates/yy.npy', 'templates/albe_kde.npy']}
       )
