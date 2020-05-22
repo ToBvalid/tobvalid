@@ -62,9 +62,9 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
 
 
     # statistics(data, inv)
-
-    if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
-        print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
+    if mode == 1:
+        if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
+          print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
 
 def process_data(data):
