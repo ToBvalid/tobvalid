@@ -1,20 +1,32 @@
+"""
+Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
+Institute of Molecular Biology and Biotechnology (IMBB)
+    
+This software is released under the
+Mozilla Public License, version 2.0; see LICENSE.
+"""
+
 import fire
 
-from tobevalid.mixture.gaussian_mixture import GaussianMixture
-from tobevalid.mixture.invgamma_mixture import InverseGammaMixture
-import tobevalid.stats.silverman as sv
-import tobevalid.parsers.gparser as gp
-import tobevalid.stats.pheight as ph
-import tobevalid.local.analysis as lc
+from tobvalid.mixture.gaussian_mixture import GaussianMixture
+from tobvalid.mixture.invgamma_mixture import InverseGammaMixture
+import tobvalid.stats.silverman as sv
+import tobvalid.parsers.gparser as gp
+import tobvalid.stats.pheight as ph
+import tobvalid.local.analysis as lc
 import os
 import shutil
 import numpy as np
 from scipy.stats import skew
 from scipy.stats import invgamma
 from scipy.stats import kurtosis
+from scipy.stats.mstats import mquantiles
+from scipy.stats import iqr
 
 
-def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
+
+
+def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
 
     mode = m
     try:
@@ -24,6 +36,7 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
         process_mode(mode)
         process_tolerance(t)
         process_dpi(hr)
+
         if a in ['all', 'local']:
             lc.local_analysis(i, out)
         if a in ['all', 'global']:
@@ -33,20 +46,24 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
         return e
 
     if a == 'local':
-        return
+        return 
 
     if s == 0:
         return "Resolution is 0"
+
+    data, iqtout1, iqtout3 = outliers(data)
 
     if len(data) <= 100:
         return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
 
     z = None
 
+
+
+
     if mode != 1:
         p_data = ph.peak_height(data, s)
 
-    # if mode == 'auto':
 
     if mode =='auto' or mode > 1:
         gauss = GaussianMixture(mode, tol=t)
@@ -61,11 +78,19 @@ def tobevalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     inv.savehtml(out, file_name, dpi=hr)
 
 
-    # statistics(data, inv)
     if mode == 1:
         if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
           print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
+
+def outliers(data):
+    qnt1 = mquantiles(data, prob = 0.25)
+    qnt3 = mquantiles(data, prob = 0.75)
+    k = 3 * iqr(data)
+    iqtout1 = data[data < (qnt1[0] - k)]
+    iqtout3 = data[data > (qnt3[0] + k)]
+    clean_data = data[(data <= (qnt3[0] + k)) &  (data >= (qnt1[0] - k))]
+    return (clean_data, iqtout1, iqtout3) 
 
 def process_data(data):
     if min(data) < 0:
@@ -173,6 +198,8 @@ def statistics(B, inv):
     print('--------------------------------------------------')
     print(' ')
 
+def main_func():
+    fire.Fire(tobvalid)
 
 if __name__ == '__main__':
-    fire.Fire(tobevalid)
+    fire.Fire(tobvalid)

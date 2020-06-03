@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 """
-Created on Sun Nov 17 15:14:24 2019
-
-@author: KavehB
+Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
+Institute of Molecular Biology and Biotechnology (IMBB)
+    
+This software is released under the
+Mozilla Public License, version 2.0; see LICENSE.
 """
 
 import numpy as np
@@ -12,6 +13,7 @@ from ._html_generator import HTMLReport
 from ._json_generator import JSONReport
 import statsmodels.api as sm
 from ..stats import kde_silverman
+
 
 class BaseMixture:
     """Base class for mixture models.
@@ -23,11 +25,11 @@ class BaseMixture:
     def __init__(self, n_modes, tol, max_iter, **kwargs):
         self._converged = False
         self.n_modes = n_modes
-        self._fit = False 
+        self._fit = False
 
         if n_modes == 'auto':
             self.n_modes = 1
-            self._fit = True 
+            self._fit = True
 
         self.tol = tol
         self.max_iter = max_iter
@@ -68,7 +70,7 @@ class BaseMixture:
             modes, kernel = kde_silverman(self.data)
             self.n_modes = modes[0]
             self._kernel = kernel
-            self._modes =  modes[1]
+            self._modes = modes[1]
             self.mix = np.ones(self.n_modes)/self.n_modes
 
         self.data_n = np.repeat(
@@ -97,7 +99,7 @@ class BaseMixture:
                 break
         self.nit = n_iter
         self._converged = True
-        self.__ppplot = sm.ProbPlot(self.data, self, fit = False)
+        self.__ppplot = sm.ProbPlot(self.data, self, fit=False)
 
     def loglike(self):
         return self._loglike
@@ -160,13 +162,13 @@ class BaseMixture:
             result.append([])
 
         for d, z in zip(self.data, self.Z):
-            result[np.random.choice(np.arange(self.n_modes), 1, p=z)[0]].append(d)
-            
+            result[np.random.choice(np.arange(self.n_modes), 1, p=z)[
+                0]].append(d)
+
         return result
 
-
     def mixtureplot(self, plt, title="Mixture"):
-    
+
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
 
         plt.figure()
@@ -184,32 +186,29 @@ class BaseMixture:
         self.__ppplot.ppplot(line='45', color='blue')
         plt.title(title)
 
-    
-
     def qqplot(self, plt, title='Q-Q Plot'):
 
         x = np.sort(self.data)
         n = x.size
         y = np.arange(1, n+1) / n
-        if( n > 200):
+        if(n > 200):
             k = n//200
         else:
-            k = 1           
+            k = 1
         x1 = self.ppf(y[:-1:k])
-        plt.figure() 
+        plt.figure()
 
         line = np.linspace(min(self.data), max(self.data), 100)
-        plt.plot(x1, x[:-1:k], linewidth = 6, color='blue')
-        plt.plot(line, line , "r-")
+        plt.plot(x1, x[:-1:k], linewidth=6, color='blue')
+        plt.plot(line, line, "r-")
         plt.xlim(min(self.data), max(self.data))
         plt.ylim(min(self.data), max(self.data))
         plt.xlabel("Theoretical Quantiles")
         plt.ylabel("Sample Quantiles")
         plt.title(title)
-        
 
     def modeplot(self, plt, title="Modes"):
-        
+
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
 
         plt.figure()

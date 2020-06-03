@@ -1,25 +1,19 @@
-# -*- coding: utf-8 -*-
 """
-Created on Thu Dec 12 12:00:08 2019
-
-@author: KavehB
+Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
+Institute of Molecular Biology and Biotechnology (IMBB)
+    
+This software is released under the
+Mozilla Public License, version 2.0; see LICENSE.
 """
-
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Dec  9 18:50:40 2019
-
-@author: KavehB
-"""
-
-
 
 
 from ._report import ReportGenerator
 import json
+
+
 class JSONReport(ReportGenerator):
 
-    def __init__(self):
+    def __init__(self, dpi):
         ReportGenerator.__init__(self, dpi)
         self._extension = ".json"
 

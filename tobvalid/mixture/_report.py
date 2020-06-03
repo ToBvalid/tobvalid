@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Dec 11 14:13:31 2019
-
-@author: KavehB
+Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
+Institute of Molecular Biology and Biotechnology (IMBB)
+    
+This software is released under the
+Mozilla Public License, version 2.0; see LICENSE.
 """
 
 
@@ -92,9 +93,9 @@ class Plot(Element):
 
     def func(self):
         return self.__func
-    
+
     def title(self):
-        return self.__title               
+        return self.__title
 
 
 class Head(Nest):

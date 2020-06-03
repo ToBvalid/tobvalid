@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 """
-Created on Mon Jul  1 17:44:05 2019
-
-@author: KavehB
+Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
+Institute of Molecular Biology and Biotechnology (IMBB)
+    
+This software is released under the
+Mozilla Public License, version 2.0; see LICENSE.
 """
 
 

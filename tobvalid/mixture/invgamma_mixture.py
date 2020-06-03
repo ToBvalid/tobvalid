@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
 """
-Created on Mon Dec  9 15:26:01 2019
+Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
+Institute of Molecular Biology and Biotechnology (IMBB)
+    
+This software is released under the
+Mozilla Public License, version 2.0; see LICENSE.
+"""
 
-@author: KavehB
-"""
 import numpy as np
 import scipy.stats as st
 from scipy import special
@@ -14,7 +16,7 @@ import os
 import sys
 import seaborn as sns
 import pandas as pd
-from matplotlib import  ticker
+from matplotlib import ticker
 
 from ._base import BaseMixture
 from ._report import Report
@@ -24,8 +26,8 @@ class InverseGammaMixture(BaseMixture):
     def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
 
         if(n_modes == 'auto'):
-           n_modes = 1
-           
+            n_modes = 1
+
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._ext = "_igmm"
 
@@ -103,24 +105,21 @@ class InverseGammaMixture(BaseMixture):
         return {"Atom numbers": [nB], "Minimum B value": [MinB], 'Maximum B value': [MaxB], 'Mean': [MeanB], 'Median': [MedB], 'Variance': [VarB], 'Skewness': [skewB],
                 'Kurtosis': [kurtsB], 'First quartile': [firstQ], 'Third quartile': [thirdQ]}
 
-
     def albeplot(self, plt, title='Alpha-Beta Plot'):
 
         if(self.n_modes > 1):
             return
-        
-   
+
         fig, ax = plt.subplots()
         for i in range(self.n_modes):
             ax.plot(self.alpha[i], np.sqrt(self.betta[i]), marker='o')
 
-       
-        d = os.path.dirname(sys.modules["tobevalid"].__file__)
+        d = os.path.dirname(sys.modules["tobvalid"].__file__)
         xx = np.load(os.path.join(d, "templates/xx.npy"))
         yy = np.load(os.path.join(d, "templates/yy.npy"))
         kde = np.load(os.path.join(d, "templates/albe_kde.npy"))
 
-        N=30
+        N = 30
         locator = ticker.MaxNLocator(N + 1, min_n_ticks=N)
         lev = locator.tick_values(kde.min(), kde.max())
 
@@ -130,7 +129,6 @@ class InverseGammaMixture(BaseMixture):
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\sqrt{\beta}$')
         plt.title(title)
-
 
     def clusterplot(self, plt, title="Clusters"):
 
@@ -144,19 +142,20 @@ class InverseGammaMixture(BaseMixture):
         cl_values = np.concatenate((clusters[0], clusters[1]),  axis=None)
 
         for i in np.arange(2, self.n_modes):
-            clust_num = np.concatenate((clust_num, np.full(len(clusters[i]), i)),  axis=None)
+            clust_num = np.concatenate(
+                (clust_num, np.full(len(clusters[i]), i)),  axis=None)
             cl_values = np.concatenate((cl_values, clusters[i]),  axis=None)
 
         df = pd.DataFrame({'BValues': cl_values, 'Clusters': clust_num})
-        counts, bins = np.histogram(cl_values, bins=np.histogram(self.data, bins='scott', density=True)[1], density=True)
+        counts, bins = np.histogram(cl_values, bins=np.histogram(
+            self.data, bins='scott', density=True)[1], density=True)
 
         groups = df.groupby([pd.cut(df.BValues, bins)])
         df_bins = pd.cut(df.BValues, bins)
         df_clust_per = ((groups.Clusters.sum()/groups.Clusters.count())).values
 
-
         norm = cl.Normalize(np.nanmin(df_clust_per),
-                             np.nanmax(df_clust_per))
+                            np.nanmax(df_clust_per))
         colors = plt.cm.get_cmap(plt.get_cmap('PRGn'))(norm(df_clust_per))
         plt.bar(bins[:-1], counts, width=(bins[1:] - bins[:-1]),
                 align="edge", color=colors)
@@ -265,11 +264,10 @@ class InverseGammaMixture(BaseMixture):
                      self._ext, "P-P Plot: {}".format(filename))
         report.image(plt, self.qqplot, filename + ".qq" +
                      self._ext, "Q-Q Plot: {}".format(filename))
-                             
-        if(self.n_modes == 1):
-             report.image(plt, self.albeplot, filename + ".albe" +
-                         self._ext, "'Alpha-Beta Plot': {}".format(filename))
 
+        if(self.n_modes == 1):
+            report.image(plt, self.albeplot, filename + ".albe" +
+                         self._ext, "'Alpha-Beta Plot': {}".format(filename))
 
         return report
 
