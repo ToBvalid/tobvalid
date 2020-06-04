@@ -1,6 +1,6 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
-Institute of Molecular Biology and Biotechnology (IMBB)
+
     
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
@@ -97,9 +97,12 @@ class BaseMixture:
             if n_iter > 1 and np.abs(change/prev_lower_bound) < self.tol:
                 self._converged_ = True
                 break
+
         self.nit = n_iter
-        self._converged = True
-        self.__ppplot = sm.ProbPlot(self.data, self, fit=False)
+        self.__ppplot = sm.ProbPlot(self.data, self, fit=False)    
+        if self._converged_:        
+            return True
+        return False    
 
     def loglike(self):
         return self._loglike
@@ -232,7 +235,7 @@ class BaseMixture:
     def savejson(self, path, filename, dpi=None):
         report = self.report(filename)
         jsonreport = JSONReport(dpi)
-        jsonreport.save(report, path, filename)
+        jsonreport.save(report, path, filename + self._ext)
 
     def report(self, filename, dpi=None):
         pass

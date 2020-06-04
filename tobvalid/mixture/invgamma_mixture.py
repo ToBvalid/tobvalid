@@ -1,6 +1,6 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
-Institute of Molecular Biology and Biotechnology (IMBB)
+
     
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
@@ -29,7 +29,7 @@ class InverseGammaMixture(BaseMixture):
             n_modes = 1
 
         BaseMixture.__init__(self, n_modes, tol, max_iter)
-        self._ext = "_igmm"
+        self._ext = "_sigd"
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -40,7 +40,7 @@ class InverseGammaMixture(BaseMixture):
 
     def _init_parameters(self, **kwargs):
         self.c = 0.1
-        self.al0 = 3.5
+        self.al0 = np.array([3.5] + [10]*(self.n_modes - 1))
         self.sig = 0.1
         self.epsilon = 1.0e-16
         self.step = 1
@@ -93,14 +93,14 @@ class InverseGammaMixture(BaseMixture):
 
     def __statistics__(self):
         nB = len(self.data)
-        MinB = np.amin(self.data)
-        MaxB = np.amax(self.data)
-        MeanB = np.mean(self.data)
-        MedB = np.median(self.data)
-        VarB = np.var(self.data)
-        skewB = st.skew(self.data)
-        kurtsB = st.kurtosis(self.data)
-        firstQ, thirdQ = np.percentile(self.data, [25, 75])
+        MinB = np.round(np.amin(self.data), 3)
+        MaxB = np.round(np.amax(self.data), 3)
+        MeanB = np.round(np.mean(self.data), 3)
+        MedB = np.round(np.median(self.data), 3)
+        VarB = np.round(np.var(self.data), 3)
+        skewB = np.round(st.skew(self.data), 3)
+        kurtsB = np.round(st.kurtosis(self.data), 3)
+        firstQ, thirdQ = np.round(np.percentile(self.data, [25, 75]), 3)
 
         return {"Atom numbers": [nB], "Minimum B value": [MinB], 'Maximum B value': [MaxB], 'Mean': [MeanB], 'Median': [MedB], 'Variance': [VarB], 'Skewness': [skewB],
                 'Kurtosis': [kurtsB], 'First quartile': [firstQ], 'Third quartile': [thirdQ]}
@@ -166,8 +166,8 @@ class InverseGammaMixture(BaseMixture):
         plt.title(title)
 
     def CalcFisherMatrix(self):
-        w = np.array([1/self.sig**2] + [0]*(self.n_modes - 1))
-
+        w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
+        
         self._loglike = 0
 
         self.__d2l = np.zeros((3*self.n_modes, 3*self.n_modes))
@@ -198,8 +198,9 @@ class InverseGammaMixture(BaseMixture):
             alpha = self.alpha[i]
             betta = self.betta[i]
 
+            w1 = w[i]
             d2f[i] = np.array([
-                [n*special.polygamma(1, alpha) + w[0], -
+                [n*special.polygamma(1, alpha) + w1, -
                  n/betta, -n*alpha/betta],
                 [-n/betta, n*alpha /
                     np.power(betta, 2), n*alpha*(alpha + 1)/np.power(betta, 2)],
@@ -242,12 +243,13 @@ class InverseGammaMixture(BaseMixture):
                                                                     self.n_modes, 1],
                                                                 ["Tolerance",
                                                                     self.tol, 1e-05],
-                                                                ["Maximum Iterations", self.max_iter, 100]])
+                                                                ["Maximum Iterations", self.max_iter, 100],
+                                                                ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 
         report.htable(["Distribution"] + list(range(1, self.n_modes + 1)),
-                      {'Mix parameters': self.mix.tolist(), 'alpha': self.alpha.tolist(), 'beta': self.betta.tolist(), 'shift': self.shift.tolist()})
+                      {'Mix parameters': np.round(self.mix, 3).tolist(), 'alpha': np.round(self.alpha, 3).tolist(), 'beta': np.round(self.betta, 3).tolist(), 'shift': np.round(self.shift, 3).tolist()})
 
         report.head('Parameters of B value distribution')
         report.htable(["",  ""],

@@ -1,6 +1,6 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
-Institute of Molecular Biology and Biotechnology (IMBB)
+
     
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
@@ -53,4 +53,4 @@ def gemmy_parse(file):
     # The array named B gives you B factors of all atoms of the structure
     B = np.asarray(B)
 
-    return (s, B)
+    return (s, B, B_with_keys)

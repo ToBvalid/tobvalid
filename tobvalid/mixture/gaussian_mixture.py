@@ -1,6 +1,6 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
-Institute of Molecular Biology and Biotechnology (IMBB)
+
     
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
@@ -67,7 +67,7 @@ class GaussianMixture(BaseMixture):
 
     def report(self, filename):
 
-        report = Report("Expecation Maximization of Gaussian Mixture Model")
+        report = Report("Expectation Maximization of Gaussian Mixture Model")
         if (self._fit == True):
             report.head("Mode search (Silverman Method)")
             report.htable(["Mode"] + list(range(1, self.n_modes + 1)),
@@ -78,12 +78,12 @@ class GaussianMixture(BaseMixture):
 
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 100]])
+                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 100], ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 
         report.htable(["Distribution"] + list(range(1, self.n_modes + 1)),
-                      {'Mix parameters': self.mix.tolist(), 'Mu': self.mu.tolist(), 'Sigma': self.sigma.tolist()})
+                      {'Mix parameters': np.round(self.mix, 3).tolist(), 'Mu': np.round(self.mu, 3).tolist(), 'Sigma': np.round(self.sigma, 3).tolist()})
         report.head("Plots")
 
         report.image(plt, self.mixtureplot, filename + ".mixture" +

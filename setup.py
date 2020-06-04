@@ -1,6 +1,6 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
-Institute of Molecular Biology and Biotechnology (IMBB)
+
     
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
@@ -16,7 +16,7 @@ setup(name='tobvalid',
       author_email='rmasmaliyeva@gmail.com, lekaveh@gmail.com, garib@mrc-lmb.cam.ac.uk',
       license='MPL-2.0',
       install_requires=['pandas', 'fire', 'matplotlib',
-                        'numpy', 'scipy', 'gemmi', 'seaborn', 'statsmodels'],
+                        'numpy', 'scipy', 'gemmi>=0.3.8', 'seaborn', 'statsmodels'],
       entry_points={
           "console_scripts": [
               "tobvalid = tobvalid.run:main_func",

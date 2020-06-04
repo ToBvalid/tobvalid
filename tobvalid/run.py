@@ -1,6 +1,6 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
-Institute of Molecular Biology and Biotechnology (IMBB)
+
     
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
@@ -8,25 +8,21 @@ Mozilla Public License, version 2.0; see LICENSE.
 
 import fire
 
+
 from tobvalid.mixture.gaussian_mixture import GaussianMixture
 from tobvalid.mixture.invgamma_mixture import InverseGammaMixture
 import tobvalid.stats.silverman as sv
 import tobvalid.parsers.gparser as gp
 import tobvalid.stats.pheight as ph
 import tobvalid.local.analysis as lc
+import tobvalid.stats.outliers as ot
 import os
 import shutil
 import numpy as np
-from scipy.stats import skew
-from scipy.stats import invgamma
-from scipy.stats import kurtosis
-from scipy.stats.mstats import mquantiles
-from scipy.stats import iqr
 
 
 
-
-def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
+def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all", it=100):
 
     mode = m
     try:
@@ -40,7 +36,7 @@ def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
         if a in ['all', 'local']:
             lc.local_analysis(i, out)
         if a in ['all', 'global']:
-            (s, data) = gp.gemmy_parse(i)
+            (s, data, data_with_keys) = gp.gemmy_parse(i)
             process_data(data)
     except ValueError as e:
         return e
@@ -51,7 +47,10 @@ def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
     if s == 0:
         return "Resolution is 0"
 
-    data, iqtout1, iqtout3 = outliers(data)
+    ot.print_outliers(out + "/Interquartile outliers.txt", data, data_with_keys)
+
+    data = ot.remove_outliers(data)
+
 
     if len(data) <= 100:
         return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
@@ -73,7 +72,7 @@ def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
         gauss.savehtml(out, file_name, dpi=hr)
         mode = gauss.n_modes 
 
-    inv = InverseGammaMixture(mode, tol=t)
+    inv = InverseGammaMixture(mode, tol=t, max_iter=it)
     inv.fit(data, z=z)
     inv.savehtml(out, file_name, dpi=hr)
 
@@ -83,14 +82,7 @@ def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all"):
           print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
 
-def outliers(data):
-    qnt1 = mquantiles(data, prob = 0.25)
-    qnt3 = mquantiles(data, prob = 0.75)
-    k = 3 * iqr(data)
-    iqtout1 = data[data < (qnt1[0] - k)]
-    iqtout3 = data[data > (qnt3[0] + k)]
-    clean_data = data[(data <= (qnt3[0] + k)) &  (data >= (qnt1[0] - k))]
-    return (clean_data, iqtout1, iqtout3) 
+
 
 def process_data(data):
     if min(data) < 0:
@@ -165,38 +157,6 @@ def process_dpi(d):
     if d < 72:
         raise ValueError("-d has to be greater or equal to 72 ")
 
-
-def statistics(B, inv):
-    nB = len(B)
-    MinB = np.amin(B)
-    MaxB = np.amax(B)
-    MeanB = np.mean(B)
-    MedB = np.median(B)
-    VarB = np.var(B)
-    skewB = skew(B)
-    kurtsB = kurtosis(B)
-    firstQ, thirdQ = np.percentile(B, [25, 75])
-    alpha = inv.alpha
-    beta = inv.betta
-    b0 = inv.shift
-
-    print('--------------------------------------------------')
-    print('Parameters of B value distribution')
-    print('Atom numbers   :', nB)
-    print('Minimum B value:', MinB)
-    print('Maximum B value:', MaxB)
-    print('Mean           :', MeanB)
-    print('Median         :', MedB)
-    print('Variance       :', VarB)
-    print('Skewness       :', skewB)
-    print('Kurtosis       :', kurtsB)
-    print('First quartile :', firstQ)
-    print('Third quartile :', thirdQ)
-    print('Alpha          :', alpha)
-    print('Beta           :', beta)
-    print('B0             :', b0)
-    print('--------------------------------------------------')
-    print(' ')
 
 def main_func():
     fire.Fire(tobvalid)
