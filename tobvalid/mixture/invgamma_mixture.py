@@ -255,6 +255,16 @@ class InverseGammaMixture(BaseMixture):
         report.htable(["",  ""],
                       self.__statistics__()
                       )
+
+
+        if (self.n_modes > 1):
+            
+            clusters = self.clusters()
+            report.head("")
+            report.htable(["Clusters"] + list(range(1, self.n_modes + 1)),
+                      {'mean': [np.round(np.mean(cl), 3) for cl in clusters], 'std': [np.round(np.std(cl), 3) for cl in clusters]})
+        
+        
         report.head("Plots")
 
         report.image(plt, self.mixtureplot, filename + ".mixture" +
@@ -266,6 +276,8 @@ class InverseGammaMixture(BaseMixture):
                      self._ext, "P-P Plot: {}".format(filename))
         report.image(plt, self.qqplot, filename + ".qq" +
                      self._ext, "Q-Q Plot: {}".format(filename))
+
+    
 
         if(self.n_modes == 1):
             report.image(plt, self.albeplot, filename + ".albe" +

@@ -25,11 +25,13 @@ class BaseMixture:
     def __init__(self, n_modes, tol, max_iter, **kwargs):
         self._converged = False
         self.n_modes = n_modes
-        self._fit = False
-
+        self._auto = False
+        self.__fit = False
+        self.__clusters = None
+        
         if n_modes == 'auto':
             self.n_modes = 1
-            self._fit = True
+            self._auto = True
 
         self.tol = tol
         self.max_iter = max_iter
@@ -66,7 +68,7 @@ class BaseMixture:
         self._check_parameters(X, **kwargs)
 
         self.data = X
-        if (self._fit == True):
+        if (self._auto == True):
             modes, kernel = kde_silverman(self.data)
             self.n_modes = modes[0]
             self._kernel = kernel
@@ -99,7 +101,11 @@ class BaseMixture:
                 break
 
         self.nit = n_iter
-        self.__ppplot = sm.ProbPlot(self.data, self, fit=False)    
+        self.__ppplot = sm.ProbPlot(self.data, self, fit=False)  
+
+        self.__clusters = None
+        self.__fit = True
+
         if self._converged_:        
             return True
         return False    
@@ -160,15 +166,17 @@ class BaseMixture:
             "Expected numerical array or number, got {} instead.".format(X))
 
     def clusters(self):
-        result = []
-        for i in np.arange(self.n_modes):
-            result.append([])
+        if( self.__clusters == None):
+            self.__clusterize()
+        return self.__clusters
+
+    def __clusterize(self):
+        self.__clusters = [[] for i in range(self.n_modes)]
 
         for d, z in zip(self.data, self.Z):
-            result[np.random.choice(np.arange(self.n_modes), 1, p=z)[
+            self.__clusters[np.random.choice(np.arange(self.n_modes), 1, p=z)[
                 0]].append(d)
 
-        return result
 
     def mixtureplot(self, plt, title="Mixture"):
 

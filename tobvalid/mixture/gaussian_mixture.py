@@ -68,7 +68,7 @@ class GaussianMixture(BaseMixture):
     def report(self, filename):
 
         report = Report("Expectation Maximization of Gaussian Mixture Model")
-        if (self._fit == True):
+        if (self._auto == True):
             report.head("Mode search (Silverman Method)")
             report.htable(["Mode"] + list(range(1, self.n_modes + 1)),
                           {' ': self._modes})
