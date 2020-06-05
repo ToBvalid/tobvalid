@@ -156,7 +156,7 @@ class InverseGammaMixture(BaseMixture):
 
         norm = cl.Normalize(np.nanmin(df_clust_per),
                             np.nanmax(df_clust_per))
-        colors = plt.cm.get_cmap(plt.get_cmap('PRGn'))(norm(df_clust_per))
+        colors = plt.cm.get_cmap(plt.get_cmap('seismic'))(norm(df_clust_per))
         plt.bar(bins[:-1], counts, width=(bins[1:] - bins[:-1]),
                 align="edge", color=colors)
 

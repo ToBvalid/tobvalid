@@ -16,7 +16,7 @@ import argparse
 import warnings
 
 
-def ro0(b1, b2, smax):
+def occupancy_estimate(b1, b2, smax):
     ccm = (b2/b1)**1.5
     if smax > 0 and b1 > 0 and b2 > 0:
         cc1 = np.sqrt(np.pi)*erf(np.sqrt(b1)*smax/2) - \
@@ -40,18 +40,18 @@ def atan(Bval, Bn, smax, ml):
     if bmedian > 0:
         b01 = bmedian + Bval
         b02 = 2*bmedian
-        ccm = ro0(b01, b02, smax)
+        ccm = occupancy_estimate(b01, b02, smax)
 
         iqr = bq3-bq1
         bb1 = max(0.001, bmedian-2*iqr)
         b01 = bb1+Bval
         b02 = 2*bb1
-        ccq1 = ro0(b01, b02, smax)
+        ccq1 = occupancy_estimate(b01, b02, smax)
 
         bb3 = bmedian+2*iqr
         b01 = bb3+Bval
         b02 = 2*bb3
-        ccq3 = ro0(b01, b02, smax)
+        ccq3 = occupancy_estimate(b01, b02, smax)
 
     return(ccm, ccq1, ccq3, bq1, bq3)
 
@@ -152,8 +152,8 @@ def ligand_validation(ligands, subcells, st, smax, name, output_path):
                         rej[len(rej.columns)] = cras
 
         ccm2 = np.median(Bn)
-        ccm_ph = ro0(ccm1, ccm2, smax)
-        ccm_td = ro0((ccm1+ccm2), (ccm2*2), smax)
+        ccm_ph = occupancy_estimate(ccm1, ccm2, smax)
+        ccm_td = occupancy_estimate((ccm1+ccm2), (ccm2*2), smax)
         F = open(output_path + "/"+name+"_ligand.txt", "a")
         F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand: {ccm1} , neighs: {ccm2} \n".format(
             pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=ccm_td, ph=ccm_ph, ccm1=ccm1, ccm2=ccm2))

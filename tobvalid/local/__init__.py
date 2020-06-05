@@ -7,5 +7,6 @@ Mozilla Public License, version 2.0; see LICENSE.
 """
 
 from .analysis import local_analysis
+from .analysis import occupancy_estimate
 
-__all__ = [s for s in dir() if not s.startswith("_")] 
+__all__ = ['local_analysis', 'occupancy_estimate'] 
