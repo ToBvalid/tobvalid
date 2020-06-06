@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 setup(name='tobvalid',
       version='0.9.2',
       description='Python library and a program for the statistical analysis and validation of ADPs (Atom Displacement Parameters)',
-      url=None,
+      url='https://github.com/ToBvalid/tobvalid',
       author='Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov',
       author_email='rmasmaliyeva@gmail.com, lekaveh@gmail.com, garib@mrc-lmb.cam.ac.uk',
       license='MPL-2.0',
