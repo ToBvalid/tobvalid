@@ -42,11 +42,11 @@ def print_outliers(filename, B, B_with_keys):
 
 
 def print_outlier(outF, B):
-    mystr = str(B)
-    mystr=re.sub("\[\[<gemmi.", "", mystr)
+    mystr = str(B[0])
+    mystr=re.sub("\[<gemmi.", "", mystr)
     mystr=re.sub("with .+ res>, <gemmi\.", "", mystr)
     mystr=re.sub("with .+ atoms>, <gemmi\.", "", mystr)
-    mystr=re.sub(">],", " B value:", mystr)
-    mystr=re.sub("]", "", mystr)
+    mystr=re.sub(">]", " B value: ", mystr)
+    mystr = mystr + str(np.round(B[1], 3))
     outF.write(mystr)
     outF.write("\n")                      
