@@ -58,26 +58,20 @@ def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all", it=100):
     z = None
 
 
-
-
-    if mode != 1:
-        p_data = ph.peak_height(data, s)
-
-
-    if mode =='auto' or mode > 1:
-        gauss = GaussianMixture(mode, tol=t)
-        gauss.fit(p_data)
-        if gauss.n_modes > 1:
-            z = gauss.Z[:, ::-1]
-        gauss.savehtml(out, file_name, dpi=hr)
-        mode = gauss.n_modes 
+    p_data = ph.peak_height(data, s)
+    gauss = GaussianMixture(mode, tol=t)
+    gauss.fit(p_data)
+    if gauss.n_modes > 1:
+        z = gauss.Z[:, ::-1]
+    gauss.savehtml(out, file_name, dpi=hr)
+    mode = gauss.n_modes 
 
     inv = InverseGammaMixture(mode, tol=t, max_iter=it)
-    inv.fit(data, z=z)
+    inv.fit(data, z=z)       
     inv.savehtml(out, file_name, dpi=hr)
 
 
-    if mode == 1:
+    if inv.n_modes == 1:
         if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
           print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
