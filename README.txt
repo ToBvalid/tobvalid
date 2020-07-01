@@ -15,7 +15,7 @@ numpy
 scipy
 gemmi>=0.3.8
 seaborn
-statsmodels
+statsmodels>=0.11.1
 
 
 ToBvalid version 0.9.2 installation
