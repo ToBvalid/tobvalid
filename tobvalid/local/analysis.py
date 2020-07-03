@@ -115,6 +115,7 @@ def l2df(mylist, mydf):
 
 
 def ligand_validation(ligands, subcells, st, smax, name, output_path):
+    olowmin = 0.7; ohighmax = 1.2
     for l in ligands:
         tc1 = str(l.subchain)[0:1]
         slas = []
@@ -156,13 +157,13 @@ def ligand_validation(ligands, subcells, st, smax, name, output_path):
         ccm_td = occupancy_estimate((ccm1+ccm2), (ccm2*2), smax)
         F = open(output_path + "/"+name+"_ligand.txt", "a")
         F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand: {ccm1} , neighs: {ccm2} \n".format(
-            pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=ccm_td, ph=ccm_ph, ccm1=ccm1, ccm2=ccm2))
+            pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=round(ccm_td, 2), ph=round(ccm_ph, 2), ccm1=round(ccm1, 2), ccm2=round(ccm2, 2)))
         F.close()
-        if ccm_td < 0.8 or ccm_td > 1.2:
-            F = open(output_path + "/ligands_validation.txt", "a")
-            F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} \n".format(
-                pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=ccm_td))
-            F.close()
+        F = open(output_path + "/ligands_validation.txt", "a")
+        if ccm_td < olowmin or ccm_td > ohighmax:
+            F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand: {ccm1} , neighs: {ccm2} \n".format(
+            pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=round(ccm_td, 2), ph=round(ccm_ph, 2), ccm1=round(ccm1, 2), ccm2=round(ccm2, 2)))
+        F.close()
 
 
 def local_analysis(input_path, ouput_path):
@@ -188,6 +189,7 @@ def local_analysis(input_path, ouput_path):
     phl = ["Potentially lighter atom", "Potentially heavier atom"]
     j = 0
     w = 0
+    olowmin = 0.7; olowq3 = 0.98; ohighmax = 1.2; ohighq1  = 1.02
     for i in range(nB):
         tc = B_with_keys[i][0][0].name
         tri = str(B_with_keys[i][0][1].seqid)
@@ -198,8 +200,11 @@ def local_analysis(input_path, ouput_path):
         ref_atom = st[tc][tri][0][ta][0]
         marks = subcells.find_neighbors(
             ref_atom, min_dist=0.1, max_dist=4.2)
+        marks1 = subcells.find_neighbors(
+            ref_atom, min_dist=0.1, max_dist=3.2)
         Bval = B_with_keys[i][1]
         ml = len(marks)
+        ml1 = len(marks1)
         Bn = []
         cras = []
         if ml >= 3:
@@ -216,7 +221,7 @@ def local_analysis(input_path, ouput_path):
 
             ccm, ccq1, ccq3, bq1, bq3 = atan(Bval, Bn, smax, ml)
 
-            if ccq1 > 1.01 and ccm > 1.2 or ccq3 < 0.99 and ccm < 0.8:
+            if ccq1 > ohighq1 and ccm > ohighmax or ccq3 < olowmin and ccm < olowq3:
                 if ccq3 < 0.99 and ccm < 0.8:
                     my_phl = 0
                 if ccq1 > 1.01 and ccm > 1.2:
@@ -236,9 +241,9 @@ def local_analysis(input_path, ouput_path):
                 j = j + 1
 
         if tr == 'HOH':
-            if ml >= 6:
+            if ml1 >= 6:
                 water[w] = {'atom': ta, 'residue number': tri, 'residue': tr,
-                            'chain': tc, 'B factor': round(Bval, 2), 'neighbours number': ml}
+                            'chain': tc, 'B factor': round(Bval, 2), 'neighbours number': ml1}
                 w = w + 1
 
     for i in res_lh:
