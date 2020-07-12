@@ -189,7 +189,7 @@ def local_analysis(input_path, ouput_path):
     phl = ["Potentially lighter atom", "Potentially heavier atom"]
     j = 0
     w = 0
-    olowmin = 0.7; olowq3 = 0.98; ohighmax = 1.2; ohighq1  = 1.02
+    olowmin = 0.8; olowq3 = 0.99; ohighmax = 1.2; ohighq1  = 1.01
     for i in range(nB):
         tc = B_with_keys[i][0][0].name
         tri = str(B_with_keys[i][0][1].seqid)
@@ -221,7 +221,7 @@ def local_analysis(input_path, ouput_path):
 
             ccm, ccq1, ccq3, bq1, bq3 = atan(Bval, Bn, smax, ml)
 
-            if ccq1 > ohighq1 and ccm > ohighmax or ccq3 < olowmin and ccm < olowq3:
+            if ccq1 > ohighq1 and ccm > ohighmax or ccm < olowmin and ccq3 < olowq3:
                 if ccq3 < 0.99 and ccm < 0.8:
                     my_phl = 0
                 if ccq1 > 1.01 and ccm > 1.2:
