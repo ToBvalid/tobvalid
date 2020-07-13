@@ -6,13 +6,10 @@ This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
 """
 
-import sys
 import gemmi
 import numpy as np
 from scipy.special import erf
 import pandas as pd
-import os
-import argparse
 import warnings
 
 
@@ -27,7 +24,7 @@ def occupancy_estimate(b1, b2, smax):
     return(ccm)
 
 
-def atan(Bval, Bn, smax, ml):
+def atna(Bval, Bn, smax, ml):
     bmedian = np.median(Bn)
     bsq = 0
     for bn in Bn:
@@ -56,10 +53,11 @@ def atan(Bval, Bn, smax, ml):
     return(ccm, ccq1, ccq3, bq1, bq3)
 
 
-def parse_an(myprot):
+def parse_an(myprot, r_main):
     st = gemmi.read_structure(myprot)
     s = st.resolution
     name = st.name
+    #r_main = 4.2
     if s == "" or s == 0:
         warnings.warn(
             "Resolution is not available. Default 2.1 A will be used..")
@@ -84,7 +82,7 @@ def parse_an(myprot):
                 else:
                     continue
     B = np.asarray(B)
-    subcells = gemmi.NeighborSearch(st[0], st.cell, 4.2)
+    subcells = gemmi.NeighborSearch(st[0], st.cell, r_main)
     # subcells.populate()
     for n_ch, chain in enumerate(st[0]):
         for n_res, res in enumerate(chain):
@@ -114,8 +112,22 @@ def l2df(mylist, mydf):
     return(mybool)
 
 
-def ligand_validation(ligands, subcells, st, smax, name, output_path):
-    olowmin = 0.7; ohighmax = 1.2
+def ligand_validation(input_path, output_path, r_main=4.2, olowmin = 0.7, ohighmax = 1.2):
+    
+    st, s, B_with_keys, B, subcells, residues, name = parse_an(input_path, r_main)
+    smax = 1/s
+    ligands = []
+    F = open(output_path + "/"+name+"_ligand.txt", "w")
+    F.write("Analysis results for all ligands within the structure model.\n\nThe list of neighbours are calculated using the radius {r}A \n\n\n".format(r = r_main))
+    F.close()
+    F2 = open(output_path + "/ligands_validation.txt", "w")
+    F2.write("List of ligans with unusual character.\n\nThe list of neighbours are calculated using the radius {r}A \n\n\n".format(r = r_main))
+    F2.close()
+    
+    for r in residues:
+        if r.het_flag == 'H' and r.name != 'HOH':
+            ligands.append(r)
+
     for l in ligands:
         tc1 = str(l.subchain)[0:1]
         slas = []
@@ -156,40 +168,43 @@ def ligand_validation(ligands, subcells, st, smax, name, output_path):
         ccm_ph = occupancy_estimate(ccm1, ccm2, smax)
         ccm_td = occupancy_estimate((ccm1+ccm2), (ccm2*2), smax)
         F = open(output_path + "/"+name+"_ligand.txt", "a")
-        F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand: {ccm1} , neighs: {ccm2} \n".format(
+        F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand B: {ccm1} , neighs B: {ccm2} \n".format(
             pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=round(ccm_td, 2), ph=round(ccm_ph, 2), ccm1=round(ccm1, 2), ccm2=round(ccm2, 2)))
         F.close()
-        F = open(output_path + "/ligands_validation.txt", "a")
+        F2 = open(output_path + "/ligands_validation.txt", "a")
         if ccm_td < olowmin or ccm_td > ohighmax:
-            F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand: {ccm1} , neighs: {ccm2} \n".format(
+            F2.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand B: {ccm1} , neighs B: {ccm2} \n".format(
             pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=round(ccm_td, 2), ph=round(ccm_ph, 2), ccm1=round(ccm1, 2), ccm2=round(ccm2, 2)))
-        F.close()
+        F2.close()
 
 
-def local_analysis(input_path, ouput_path):
+def local_analysis(input_path, ouput_path, r_main = 4.2, r_wat = 3.2, olowmin = 0.7, olowq3 = 0.99, ohighmax = 1.2, ohighq1 = 1.01):
+    
 
-    st, s, B_with_keys, B, subcells, residues, mypdb = parse_an(input_path)
+
+    st, s, B_with_keys, B, subcells, residues, mypdb = parse_an(input_path, r_main)
     smax = 1/s
     nB = len(B)
     res_lh = {}
     water = {}
-    ligands = []
+
+    #ligands = []
 
     local_path = ouput_path + "/"+ mypdb +"_local.txt"
     water_path = ouput_path + "/"+ mypdb +"_water.txt"
 
     F = open(local_path, "w")
+    F.write("Local B value analysis within the radius of {r}A \n\n".format(r = r_main))
     F.close()
     F2 = open(water_path, "w")
-
-    F2.write("Water molecules with unusual character are listed below: \n\n")
+    F2.write("Water molecules with number of neighbours 6 and more are listed below: \n\nThe list of neighbours are calculated using the radius {r}A \n\n\n\n".format(r = r_wat))
     F2.close() 
 
 
     phl = ["Potentially lighter atom", "Potentially heavier atom"]
     j = 0
     w = 0
-    olowmin = 0.8; olowq3 = 0.99; ohighmax = 1.2; ohighq1  = 1.01
+    
     for i in range(nB):
         tc = B_with_keys[i][0][0].name
         tri = str(B_with_keys[i][0][1].seqid)
@@ -199,9 +214,9 @@ def local_analysis(input_path, ouput_path):
         # ref_atom = st.sole_residue(tc, gemmi.SeqId(tri))[ta]
         ref_atom = st[tc][tri][0][ta][0]
         marks = subcells.find_neighbors(
-            ref_atom, min_dist=0.1, max_dist=4.2)
+            ref_atom, min_dist=0.1, max_dist=r_main)
         marks1 = subcells.find_neighbors(
-            ref_atom, min_dist=0.1, max_dist=3.2)
+            ref_atom, min_dist=0.1, max_dist=r_wat)
         Bval = B_with_keys[i][1]
         ml = len(marks)
         ml1 = len(marks1)
@@ -219,7 +234,7 @@ def local_analysis(input_path, ouput_path):
                 bz = (Bval-bav)/bst
             bmedian = np.median(Bn)
 
-            ccm, ccq1, ccq3, bq1, bq3 = atan(Bval, Bn, smax, ml)
+            ccm, ccq1, ccq3, bq1, bq3 = atna(Bval, Bn, smax, ml)
 
             if ccq1 > ohighq1 and ccm > ohighmax or ccm < olowmin and ccq3 < olowq3:
                 if ccq3 < 0.99 and ccm < 0.8:
@@ -242,9 +257,17 @@ def local_analysis(input_path, ouput_path):
 
         if tr == 'HOH':
             if ml1 >= 6:
-                water[w] = {'atom': ta, 'residue number': tri, 'residue': tr,
-                            'chain': tc, 'B factor': round(Bval, 2), 'neighbours number': ml1}
-                w = w + 1
+                Bn1 = []
+                for mark1 in marks1:
+                    cra1 = mark1.to_cra(st)
+                    Bn1.append(cra1.atom.b_iso)
+                bst1 = np.std(Bn1)
+                if bst1>0:
+                    #bz = (Bval-bav)/bst
+                    bmedian1 = np.median(Bn1)
+                
+                ccm, ccq1, ccq3, bq1, bq3 = atna(Bval, Bn1, smax, ml1)
+                water[w] = {'atom': ta, 'residue number': tri, 'residue': tr, 'chain': tc, 'B factor': round(Bval, 2), 'neighbours number': ml1, 'neighbours median B': round(bmedian1, 2), 'occ' :round(ccm, 2)}
 
     for i in res_lh:
         F = open(local_path, "a")
@@ -268,17 +291,3 @@ def local_analysis(input_path, ouput_path):
         F = open(water_path, "a")
         F.write(str(water[w])+"\n")
         F.close()
-
-    fbul1 = os.stat(local_path).st_size == 0
-    if fbul1 == True:
-        os.remove(local_path)
-    fbul2 = os.stat(water_path).st_size <= 59
-    if fbul2 == True:
-        os.remove(water_path)
-    if fbul1 == True and fbul2 == True:
-        print("This model has no unusual atoms")
-
-    for r in residues:
-        if r.het_flag == 'H' and r.name != 'HOH':
-            ligands.append(r)
-    ligand_validation(ligands, subcells, st, smax, mypdb, ouput_path)

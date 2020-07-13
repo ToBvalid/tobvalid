@@ -1,4 +1,4 @@
-ToBvalid version 0.9.3
+ToBvalid version 0.9.4
 =======================
 
 ToBvalid is a Python library and a program for the statistical analysis and validation of ADPs (Atom displacement parameters).
@@ -9,7 +9,6 @@ Dependencies
 ===================
 
 pandas
-fire
 matplotlib
 numpy
 scipy
@@ -18,7 +17,7 @@ seaborn
 statsmodels>=0.11.1
 
 
-ToBvalid version 0.9.3 installation
+ToBvalid version 0.9.4 installation
 ====================================
 
 For installation you may need administrator permissions, 
@@ -34,7 +33,7 @@ Type 'pip install tobvalid'
 License
 =======
 
-ToBvalid-0.9.3 comes under Mozilla Public License Version 2.0 licence.
+ToBvalid-0.9.4 comes under Mozilla Public License Version 2.0 licence.
 
 
 Citations

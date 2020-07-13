@@ -16,9 +16,10 @@ from ._report import Report
 
 
 class GaussianMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-05, max_iter=100, **kwargs):
+    def __init__(self, n_modes=1, tol=1e-05, max_iter=200, **kwargs):
         BaseMixture.__init__(self, n_modes, tol, max_iter, **kwargs)
         self._ext = "_gmm"
+        self._xlabel = "Peak Height Values"
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -78,7 +79,7 @@ class GaussianMixture(BaseMixture):
 
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 100], ["Number of Iterations", self.nit, 0]])
+                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 200], ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 
@@ -86,7 +87,8 @@ class GaussianMixture(BaseMixture):
                       {'Mix parameters': np.round(self.mix, 3).tolist(), 'Mu': np.round(self.mu, 3).tolist(), 'Sigma': np.round(self.sigma, 3).tolist()})
         report.head("Plots")
 
+        title = "Gaussian Mixture: {}" if self.n_modes > 1 else "Gaussian Distribution: {}"
         report.image(plt, self.mixtureplot, filename + ".mixture" +
-                     self._ext, "Gaussian Mixture: {}".format(filename))
+                     self._ext, title.format(filename))
 
         return report

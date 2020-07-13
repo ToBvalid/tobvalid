@@ -40,6 +40,7 @@ class BaseMixture:
         self.nit = 0
         self._ext = "mm"
         self._check_initial_parameters(**kwargs)
+        self._xlabel = "Values"
 
     def _check_initial_parameters(self, **kwargs):
         """Check values of the basic parameters.
@@ -189,6 +190,8 @@ class BaseMixture:
         values = self.pdf(x)
 
         plt.plot(x, values, label="mixture", color='black')
+        plt.xlabel(self._xlabel)
+        plt.ylabel("Density")
         plt.legend()
         plt.title(title)
 
@@ -233,6 +236,8 @@ class BaseMixture:
             plt.plot(mode, self._kernel(mode), marker="*", label=mode)
 
         plt.legend()
+        plt.xlabel(self._xlabel)
+        plt.ylabel("Density")
         plt.title(title)
 
     def savehtml(self, path, filename, dpi=None):

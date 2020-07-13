@@ -23,13 +23,14 @@ from ._report import Report
 
 
 class InverseGammaMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
+    def __init__(self, n_modes=1, tol=1e-5, max_iter=200):
 
         if(n_modes == 'auto'):
             n_modes = 1
 
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._ext = "_sigd"
+        self._xlabel = "Atomic B values"
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -107,9 +108,6 @@ class InverseGammaMixture(BaseMixture):
 
     def albeplot(self, plt, title='Alpha-Beta Plot'):
 
-        if(self.n_modes > 1):
-            return
-
         fig, ax = plt.subplots()
         for i in range(self.n_modes):
             ax.plot(self.alpha[i], np.sqrt(self.betta[i]), marker='o')
@@ -124,7 +122,7 @@ class InverseGammaMixture(BaseMixture):
         lev = locator.tick_values(kde.min(), kde.max())
 
         cfset = ax.contourf(xx, yy, kde, cmap='Reds', levels=lev[1:])
-        cbar = fig.colorbar(cfset)
+        fig.colorbar(cfset)
 
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\sqrt{\beta}$')
@@ -134,7 +132,7 @@ class InverseGammaMixture(BaseMixture):
 
         if self.n_modes == 1:
             return
-        fig = plt.figure()
+        plt.figure()
         clusters = self.clusters()
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
         clust_num = np.concatenate(
@@ -151,7 +149,7 @@ class InverseGammaMixture(BaseMixture):
             self.data, bins='scott', density=True)[1], density=True)
 
         groups = df.groupby([pd.cut(df.BValues, bins)])
-        df_bins = pd.cut(df.BValues, bins)
+
         df_clust_per = ((groups.Clusters.sum()/groups.Clusters.count())).values
 
         norm = cl.Normalize(np.nanmin(df_clust_per),
@@ -228,7 +226,6 @@ class InverseGammaMixture(BaseMixture):
             np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
         shiftc = np.matmul(-inv, grad)
         return shiftc.reshape((self.n_modes, 3)).T
-        return True
 
     def params(self):
         return {"mix": self.mix, "alpha": self.alpha, "betta": self.betta, "shift": self.shift}
@@ -243,7 +240,7 @@ class InverseGammaMixture(BaseMixture):
                                                                     self.n_modes, 1],
                                                                 ["Tolerance",
                                                                     self.tol, 1e-05],
-                                                                ["Maximum Iterations", self.max_iter, 100],
+                                                                ["Maximum Iterations", self.max_iter, 200],
                                                                 ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
@@ -267,8 +264,9 @@ class InverseGammaMixture(BaseMixture):
         
         report.head("Plots")
 
+        title = "Inverse Gamma Mixture: {}" if self.n_modes > 1 else "Inverse Gamma Distribution: {}"
         report.image(plt, self.mixtureplot, filename + ".mixture" +
-                     self._ext, "Inverse Gamma Mixture: {}".format(filename))
+                     self._ext, title.format(filename))
         if(self.n_modes > 1):
             report.image(plt, self.clusterplot, filename +
                          ".clusters" + self._ext, "Clusters: {}".format(filename))
@@ -279,9 +277,9 @@ class InverseGammaMixture(BaseMixture):
 
     
 
-        if(self.n_modes == 1):
-            report.image(plt, self.albeplot, filename + ".albe" +
-                         self._ext, "'Alpha-Beta Plot': {}".format(filename))
+
+        report.image(plt, self.albeplot, filename + ".albe" +
+                        self._ext, "'Alpha-Beta Plot': {}".format(filename))
 
         return report
 

@@ -9,7 +9,7 @@ Mozilla Public License, version 2.0; see LICENSE.
 from setuptools import setup, find_packages
 
 setup(name='tobvalid',
-      version='0.9.3',
+      version='0.9.4',
       description='Python library and a program for the statistical analysis and validation of ADPs (Atom Displacement Parameters)',
       url='https://github.com/ToBvalid/tobvalid',
       author='Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov',
@@ -24,7 +24,7 @@ setup(name='tobvalid',
             • Search for potential lighter and heavier atoms which may have been modelled wrongly
             • Validation of ligands''',
 
-      install_requires=['pandas', 'fire', 'matplotlib',
+      install_requires=['pandas', 'matplotlib', 'jsonschema>=3.2.0',
                         'numpy', 'scipy', 'gemmi>=0.3.8', 'seaborn', 'statsmodels>=0.11.1'],
       entry_points={
           "console_scripts": [
