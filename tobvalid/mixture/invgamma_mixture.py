@@ -30,6 +30,7 @@ class InverseGammaMixture(BaseMixture):
 
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._ext = "_sigd"
+        self._xlabel = "Atomic B values"
 
     def _check_initial_custom_parameters(self, **kwargs):
         return
@@ -263,8 +264,9 @@ class InverseGammaMixture(BaseMixture):
         
         report.head("Plots")
 
+        title = "Inverse Gamma Mixture: {}" if self.n_modes > 1 else "Inverse Gamma Distribution: {}"
         report.image(plt, self.mixtureplot, filename + ".mixture" +
-                     self._ext, "Inverse Gamma Mixture: {}".format(filename))
+                     self._ext, title.format(filename))
         if(self.n_modes > 1):
             report.image(plt, self.clusterplot, filename +
                          ".clusters" + self._ext, "Clusters: {}".format(filename))
