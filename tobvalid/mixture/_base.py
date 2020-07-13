@@ -189,7 +189,7 @@ class BaseMixture:
             edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
         values = self.pdf(x)
 
-        plt.plot(x, values, label="mixture", color='black')
+        plt.plot(x, values, color='black')
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
         plt.legend()
