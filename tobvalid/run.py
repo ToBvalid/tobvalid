@@ -6,9 +6,7 @@ This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
 """
 
-import fire
-
-
+import argparse
 from tobvalid.mixture.gaussian_mixture import GaussianMixture
 from tobvalid.mixture.invgamma_mixture import InverseGammaMixture
 import tobvalid.stats.silverman as sv
@@ -22,6 +20,8 @@ import numpy as np
 import json
 import jsonschema
 from jsonschema import validate
+
+
 
 
 def tobvalid(i, o=None, m=1, p=None):
@@ -308,9 +308,24 @@ Used parameters are listed below:\n'''.format(input, output, mode))
 
 def separator():
      print("----------------------------------------------------------------------------------------------------")
+
+
 def main_func():
-    fire.Fire(tobvalid)
+    parser = argparse.ArgumentParser(description='''"Local and global analysis of macromolecular Atomic Displacement Parameters".
+R.Masmaliyeva, K.Babai & G.Murshudov.
+Acta Cryst. D76 (to be published)''')
 
+    requiredNamed = parser.add_argument_group('required arguments')
+    requiredNamed.add_argument("-i",  "--input", type=str, metavar="<pdb file>", help="Path to the pdb file.")
 
-if __name__ == '__main__':
-    fire.Fire(tobvalid)
+    parser.add_argument("-o", "--output", type=str, metavar='<output file directory>', default=None, help="Output directory.")
+    parser.add_argument("-m", "--modes", metavar='<number of modes | auto>', default = 1, help="Number of modes. Must be positive integer ot 'auto'.")
+    parser.add_argument("-p", "--params", type=str, metavar='<json parameter file>', default = None, help="Path to the json config file")
+
+    args = parser.parse_args()
+
+    if args.input == None:
+        parser.error("the following arguments are required: -i/--input <pdb file>")
+
+    return tobvalid(args.input, o=args.output, m=args.modes, p=args.params)
+    
