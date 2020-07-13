@@ -24,7 +24,7 @@ setup(name='tobvalid',
             • Search for potential lighter and heavier atoms which may have been modelled wrongly
             • Validation of ligands''',
 
-      install_requires=['pandas', 'fire', 'matplotlib',
+      install_requires=['pandas', 'fire', 'matplotlib', 'jsonschema>=3.2.0',
                         'numpy', 'scipy', 'gemmi>=0.3.8', 'seaborn', 'statsmodels>=0.11.1'],
       entry_points={
           "console_scripts": [

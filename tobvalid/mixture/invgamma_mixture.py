@@ -23,7 +23,7 @@ from ._report import Report
 
 
 class InverseGammaMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-5, max_iter=100):
+    def __init__(self, n_modes=1, tol=1e-5, max_iter=200):
 
         if(n_modes == 'auto'):
             n_modes = 1
@@ -239,7 +239,7 @@ class InverseGammaMixture(BaseMixture):
                                                                     self.n_modes, 1],
                                                                 ["Tolerance",
                                                                     self.tol, 1e-05],
-                                                                ["Maximum Iterations", self.max_iter, 100],
+                                                                ["Maximum Iterations", self.max_iter, 200],
                                                                 ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")

@@ -16,7 +16,7 @@ from ._report import Report
 
 
 class GaussianMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-05, max_iter=100, **kwargs):
+    def __init__(self, n_modes=1, tol=1e-05, max_iter=200, **kwargs):
         BaseMixture.__init__(self, n_modes, tol, max_iter, **kwargs)
         self._ext = "_gmm"
 
@@ -78,7 +78,7 @@ class GaussianMixture(BaseMixture):
 
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 100], ["Number of Iterations", self.nit, 0]])
+                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 200], ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 
