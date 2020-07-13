@@ -22,38 +22,34 @@ import numpy as np
 
 
 
-def tobvalid(i, o=None, m=1, t=1e-5, hr=150, a="all", it=100):
+def tobvalid(i, o=None, m=1, t=1e-5, hr=150,  it=100):
 
     mode = m
     try:
         file_name = process_input(i)
         out = proccess_output(i, o, file_name)
-        process_analysis(a)
         process_mode(mode)
         process_tolerance(t)
         process_dpi(hr)
 
-        if a in ['all', 'local']:
-            lc.local_analysis(i, out)
-        if a in ['all', 'global']:
-            (s, data, data_with_keys) = gp.gemmy_parse(i)
-            process_data(data)
+        (s, data, data_with_keys) = gp.gemmy_parse(i)
+        process_data(data)
     except ValueError as e:
         return e
 
-    if a == 'local':
-        return 
-
-    if s == 0:
-        return "Resolution is 0"
+    if len(data) <= 100:
+        return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
 
     ot.print_outliers(out + "/Interquartile outliers.txt", data, data_with_keys)
 
     data = ot.remove_outliers(data)
 
-
     if len(data) <= 100:
         return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
+
+    lc.local_analysis(i, out)
+    lc.ligand_validation(i, out)
+
 
     z = None
 
@@ -119,11 +115,6 @@ def proccess_output(i, o, file_name):
     return out
 
 
-def process_analysis(a):
-    if a in ['all', 'global', 'local']:
-        return
-
-    raise ValueError("-a has to be 'all', 'global' or 'local'")
 
 
 def process_mode(mode):
