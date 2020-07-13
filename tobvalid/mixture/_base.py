@@ -235,7 +235,6 @@ class BaseMixture:
         for mode in self._modes:
             plt.plot(mode, self._kernel(mode), marker="*", label=mode)
 
-        plt.legend()
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
         plt.title(title)
