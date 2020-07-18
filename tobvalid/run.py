@@ -30,14 +30,13 @@ def tobvalid(i, o=None, m=1, p=None):
     try:
         file_name = process_input(i)
         out = proccess_output(i, o, file_name)
-        
         parameters = process_p(p)
         local_params = get_local_params(parameters)
         ligand_params = get_ligand_params(parameters)
         gmm_params = get_gmm_params(parameters)
         igmm_params = get_igmm_params(parameters)
         resolution = get_plot_params(parameters)
-        process_mode(mode)
+        mode = process_mode(mode)
 
         (s, data, data_with_keys) = gp.gemmy_parse(i)
         process_data(data)
@@ -131,13 +130,19 @@ def proccess_output(i, o, file_name):
 
 def process_mode(mode):
     if mode == 'auto':
-        return
+        return mode
+               
     if not isinstance(mode, int):
-        raise ValueError("-m has to be integer or 'auto'")
+        try: 
+            mode = int(mode) 
+        except ValueError:
+             raise ValueError("-m has to be positive integer or 'auto'")
+       
 
     if mode < 1:
         raise ValueError("-m has to be greater than zero or equal to 'auto'")
-
+    
+    return mode
 
 def process_p(config):
 

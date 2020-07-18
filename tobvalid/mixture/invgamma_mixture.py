@@ -159,8 +159,12 @@ class InverseGammaMixture(BaseMixture):
                 align="edge", color=colors)
 
         values = self.pdf(x)
+
         plt.plot(x, values)
 
+        plt.plot(x, values, color='black')
+        plt.xlabel(self._xlabel)
+        plt.ylabel("Density")
         plt.title(title)
 
     def CalcFisherMatrix(self):

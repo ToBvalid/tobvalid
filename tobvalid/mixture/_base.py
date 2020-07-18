@@ -201,7 +201,6 @@ class BaseMixture:
         plt.plot(x, values, color='black')
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
-        plt.legend()
         plt.title(title)
 
     def probplot(self, plt, title='P-P Plot'):
