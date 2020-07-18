@@ -13,6 +13,7 @@ from ._html_generator import HTMLReport
 from ._json_generator import JSONReport
 import statsmodels.api as sm
 from ..stats import kde_silverman
+import time
 
 
 class BaseMixture:
@@ -41,6 +42,7 @@ class BaseMixture:
         self._ext = "mm"
         self._check_initial_parameters(**kwargs)
         self._xlabel = "Values"
+        self.__time = 0
 
     def _check_initial_parameters(self, **kwargs):
         """Check values of the basic parameters.
@@ -86,6 +88,7 @@ class BaseMixture:
         lower_bound = -np.infty
         self.nit = 0
 
+        start = time.time()
         for n_iter in np.arange(1, self.max_iter + 1):
 
             prev_lower_bound = lower_bound
@@ -100,7 +103,7 @@ class BaseMixture:
             if n_iter > 1 and np.abs(change/prev_lower_bound) < self.tol:
                 self._converged_ = True
                 break
-
+        self.__time = time.time() - start       
         self.nit = n_iter
         self.__ppplot = sm.ProbPlot(self.data, self, fit=False)  
 
@@ -110,7 +113,13 @@ class BaseMixture:
         if self._converged_:        
             return True
         return False    
+    
+    def time(self):
+        return self.__time
 
+    def converged(self):
+        return self._converged_
+        
     def loglike(self):
         return self._loglike
 
