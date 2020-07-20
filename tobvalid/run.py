@@ -39,6 +39,10 @@ def tobvalid(i, o=None, m=1, p=None):
         mode = process_mode(mode)
 
         (s, data, data_with_keys) = gp.gemmy_parse(i)
+
+        if s > 5:
+            return "Low resolution: not for automatic analysis. Not now."
+            
         process_data(data)
     except ValueError as e:
         return e
@@ -48,16 +52,13 @@ def tobvalid(i, o=None, m=1, p=None):
     summury(i, out, mode, local_params, ligand_params, gmm_params, igmm_params, resolution)
     
 
-    if len(data) <= 100:
-        return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
+  
 
     ot.print_outliers(out + "/Interquartile outliers.txt",
                       data, data_with_keys)
 
     data = ot.remove_outliers(data)
 
-    if len(data) <= 100:
-        return "There is not sufficient amount of data to analyse, the results may left questions. Do not hesitate to contact ToBvalid team"
 
     lc.local_analysis(i, out,
                       r_main=local_params[0],
@@ -96,6 +97,13 @@ def process_data(data):
     if min(data) < 0:
         raise ValueError(
             "Zero or minus values for B factors are observed. Please consider the structure model for re-refinement or contact the authors")
+    if np.sum(data <= min(data)+0.0001*np.median(data)) >= 0.1*np.size(data):
+        raise ValueError("Too many values close to minimum: Possible overshapening case.")
+    if np.sum(data >= max(data) - 0.0001*np.median(data)) >= 0.1*np.size(data):
+        raise ValueError("Too many values close to maximum: Possible upper limit problem.")
+    if np.size(data) < 200:
+        raise ValueError("Too few atoms for analysis")
+
 
 
 def process_input(i):

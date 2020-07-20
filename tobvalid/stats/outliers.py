@@ -6,17 +6,24 @@ import re
 def remove_outliers(data):
     qnt1 = mquantiles(data, prob = 0.25)
     qnt3 = mquantiles(data, prob = 0.75)
-    k = 3 * iqr(data)
-    clean_data = data[(data <= (qnt3[0] + k)) &  (data >= (qnt1[0] - k))]
+    k1 = 10 * iqr(data); k2 = 2*iqr(data)
+    if np.sum( (data >= np.min(data) + 0.001*np.median(data))) > 1:
+        clean_data = data[(data <= (qnt3[0] + k1)) &  (data >= (qnt1[0] - k2)) &
+                                                   (data >= np.min(data) + 0.001*np.median(data))]
+    else:
+        clean_data = data[(data <= (qnt3[0] + k1)) &  (data >= (qnt1[0] - k2))]
+    if np.sum( (data >= np.max(data) - 0.001*np.median(data))) > 1:
+        clean_data = clean_data[(clean_data <= np.max(data) - 0.001*np.median(data))]
     return clean_data
 
 
 def find_outliers(data):
     qnt1 = mquantiles(data, prob = 0.25)
     qnt3 = mquantiles(data, prob = 0.75)
-    k = 3 * iqr(data)
-    iqtout1 = np.asarray(np.where(data < (qnt1[0] - k)))[0]
-    iqtout3 = np.asarray(np.where(data > (qnt3[0] + k)))[0]
+    k1 = 5 * iqr(data)
+    k2 = 2 * iqr(data)
+    iqtout1 = np.asarray(np.where(data < (qnt1[0] - k2)))[0]
+    iqtout3 = np.asarray(np.where(data > (qnt3[0] + k1)))[0]
     return (iqtout1, iqtout3)    
 
 

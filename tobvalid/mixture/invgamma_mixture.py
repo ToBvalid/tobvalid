@@ -79,7 +79,7 @@ class InverseGammaMixture(BaseMixture):
             self.CalcFisherMatrix()
 
             if self._loglike > ifvalue:
-                step = step*0.7
+                step = step*0.5
             else:
                 conv = True
                 break
@@ -169,9 +169,9 @@ class InverseGammaMixture(BaseMixture):
 
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
+
         
         self._loglike = 0
-
         self.__d2l = np.zeros((3*self.n_modes, 3*self.n_modes))
         self.__gradAlpha = [0]*self.n_modes
         self.__gradBetta = [0]*self.n_modes
@@ -224,10 +224,10 @@ class InverseGammaMixture(BaseMixture):
 
     def shiftcalc(self, tol=1.0e-5):
 
-        inv = np.linalg.inv(
-            self.__d2l + tol*np.random.randn(3*self.n_modes, 3*self.n_modes))
-        grad = np.transpose(
-            np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
+        # inv = np.linalg.inv(
+        #     self.__d2l + tol*np.random.randn(3*self.n_modes, 3*self.n_modes))
+        inv = np.linalg.pinv(self.__d2l, rcond=tol)
+        grad = np.transpose(np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
         shiftc = np.matmul(-inv, grad)
         return shiftc.reshape((self.n_modes, 3)).T
 
@@ -244,7 +244,8 @@ class InverseGammaMixture(BaseMixture):
                                                                     self.n_modes, 1],
                                                                 ["Tolerance",
                                                                     self.tol, 1e-05],
-                                                                ["Maximum Iterations", self.max_iter, 200],
+                                                                ["Maximum Iterations",
+                                                                    self.max_iter, 200],
                                                                 ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
@@ -257,15 +258,13 @@ class InverseGammaMixture(BaseMixture):
                       self.__statistics__()
                       )
 
-
         if (self.n_modes > 1):
-            
+
             clusters = self.clusters()
             report.head("")
             report.htable(["Clusters"] + list(range(1, self.n_modes + 1)),
-                      {'mean': [np.round(np.mean(cl), 3) for cl in clusters], 'std': [np.round(np.std(cl), 3) for cl in clusters]})
-        
-        
+                          {'mean': [np.round(np.mean(cl), 3) for cl in clusters], 'std': [np.round(np.std(cl), 3) for cl in clusters]})
+
         report.head("Plots")
 
         title = "Inverse Gamma Mixture: {}" if self.n_modes > 1 else "Inverse Gamma Distribution: {}"
@@ -279,11 +278,8 @@ class InverseGammaMixture(BaseMixture):
         report.image(plt, self.qqplot, filename + ".qq" +
                      self._ext, "Q-Q Plot: {}".format(filename))
 
-    
-
-
         report.image(plt, self.albeplot, filename + ".albe" +
-                        self._ext, "'Alpha-Beta Plot': {}".format(filename))
+                     self._ext, "'Alpha-Beta Plot': {}".format(filename))
 
         return report
 
