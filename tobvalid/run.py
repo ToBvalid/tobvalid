@@ -20,8 +20,11 @@ import numpy as np
 import json
 import jsonschema
 from jsonschema import validate
-
-
+import holoviews as hv
+import panel as pn
+from bokeh.resources import INLINE
+pn.extension()
+hv.extension('bokeh')
 
 
 def tobvalid(i, o=None, m=1, p=None):
@@ -38,27 +41,43 @@ def tobvalid(i, o=None, m=1, p=None):
         resolution = get_plot_params(parameters)
         mode = process_mode(mode)
 
+        summury(i, out, mode, local_params, ligand_params,
+                gmm_params, igmm_params, resolution)
         (s, data, data_with_keys) = gp.gemmy_parse(i)
 
         if s > 20:
             return "Low resolution: not for automatic analysis. Not now."
-            
-        process_data(data)
+
     except ValueError as e:
         return e
 
-    
-    
-    summury(i, out, mode, local_params, ligand_params, gmm_params, igmm_params, resolution)
-    
+    try:
+        process_data(data)
+    except ValueError as e:
+        p_data = ph.peak_height(data, s)
 
-  
+        layout = pn.Column("# Program could not analyse the data. The reason is: {} ".format(str(e)),
+                           "## Please look at the histograms of ADP values and Peak Height distributions",
+                           "### {}".format(file_name),
+
+                           pn.layout.Divider(margin=(-20, 0, 0, 0)),
+
+                           pn.Row(histogram(data, "scott", "Atomic B Values")),
+                           pn.Row(histogram(p_data, "scott",
+                                            "Peak Height Values")),
+                           width=1000
+                           )
+
+        layout.save("{}/{}.html".format(out, file_name), resources=INLINE)
+
+        return e
+
+    p_data = ph.peak_height(data, s)
 
     ot.print_outliers(out + "/Interquartile outliers.txt",
                       data, data_with_keys)
 
     data = ot.remove_outliers(data)
-
 
     lc.local_analysis(i, out,
                       r_main=local_params[0],
@@ -84,10 +103,10 @@ def tobvalid(i, o=None, m=1, p=None):
     gauss.savehtml(out, file_name, dpi=resolution)
     mode = gauss.n_modes
 
-    inv = InverseGammaMixture(mode, tol=igmm_params[0], max_iter=igmm_params[1], ext = igmm_params[2])
+    inv = InverseGammaMixture(
+        mode, tol=igmm_params[0], max_iter=igmm_params[1], ext=igmm_params[2])
     inv.fit(data, z=z)
     inv.savehtml(out, file_name, dpi=resolution)
-
 
     if inv.n_modes == 1:
         if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
@@ -99,19 +118,24 @@ def process_data(data):
         raise ValueError(
             "Zero or minus values for B factors are observed. Please consider the structure model for re-refinement or contact the authors")
     if np.sum(data <= min(data)+0.0001*np.median(data)) >= 0.1*np.size(data):
-        raise ValueError("Too many values close to minimum: Possible oversharpening case.")
+        raise ValueError(
+            "Too many values close to minimum: Possible oversharpening case.")
     if np.sum(data >= max(data) - 0.0001*np.median(data)) >= 0.1*np.size(data):
-        raise ValueError("Too many values close to maximum: Possible upper limit problem.")
+        raise ValueError(
+            "Too many values close to maximum: Possible upper limit problem.")
     if np.size(data) < 200:
         raise ValueError("Too few atoms for analysis")
-    udata,cnts = np.unique(data,return_counts=True) 
+    udata, cnts = np.unique(data, return_counts=True)
     nps = np.size(data)
-  
-    if np.size(udata) <= max(10,int(0.01*nps)):
-        raise ValueError("Too many unique repeated values: B values may have not been refined properly")
+
+    if np.size(udata) <= max(10, int(0.01*nps)):
+        raise ValueError(
+            "Too many unique repeated values: B values may have not been refined properly")
     if max(cnts) >= 0.05*nps:
-        raise ValueError("Some values are repeated more than 5% of times: B values may have not been refined properly")
-    
+        raise ValueError(
+            "Some values are repeated more than 5% of times: B values may have not been refined properly")
+
+
 def process_input(i):
     check_file(i)
     return os.path.basename(os.path.splitext(i)[0])
@@ -124,7 +148,11 @@ def proccess_output(i, o, file_name):
         out = os.getcwd()
     else:
         if not os.path.exists(o):
-            raise ValueError("output path {} doesn't exist".format(o))
+            try:
+                os.mkdir(o)
+            except OSError:
+                raise ValueError("Creation of the directory %s failed" % o)
+
 
         if not os.path.isdir(o):
             raise ValueError("{} is not directory".format(o))
@@ -145,18 +173,18 @@ def proccess_output(i, o, file_name):
 def process_mode(mode):
     if mode == 'auto':
         return mode
-               
+
     if not isinstance(mode, int):
-        try: 
-            mode = int(mode) 
+        try:
+            mode = int(mode)
         except ValueError:
-             raise ValueError("-m has to be positive integer or 'auto'")
-       
+            raise ValueError("-m has to be positive integer or 'auto'")
 
     if mode < 1:
         raise ValueError("-m has to be greater than zero or equal to 'auto'")
-    
+
     return mode
+
 
 def process_p(config):
 
@@ -194,6 +222,7 @@ def get_local_params(parameters):
 
     return (r_main, r_wat, olowmin, olowq3, ohighmax, ohighq1)
 
+
 def get_ligand_params(parameters):
     r_main = get_value(parameters, ["ligand", "r_main"], 4.2)
     olowmin = get_value(parameters, ["ligand", "olowmin"], 0.7)
@@ -201,16 +230,19 @@ def get_ligand_params(parameters):
 
     return (r_main, olowmin,  ohighmax)
 
+
 def get_gmm_params(parameters):
     return (get_value(parameters, ["gmm", "tolerance"], 1e-05), get_value(parameters, ["gmm", "maxiteration"], 1000))
 
 
 def get_igmm_params(parameters):
     return (get_value(parameters, ["igmm", "tolerance"], 1e-04), get_value(parameters, ["igmm", "maxiteration"], 1000),
-    get_value(parameters, ["igmm", "ext"], "classic") )
+            get_value(parameters, ["igmm", "ext"], "classic"))
+
 
 def get_plot_params(parameters):
-    return (get_value(parameters, ["plot", "dpi"], 150))    
+    return (get_value(parameters, ["plot", "dpi"], 150))
+
 
 def get_value(dict, path, default):
     if dict == None:
@@ -224,6 +256,12 @@ def get_value(dict, path, default):
     if result == None:
         return default
     return result
+
+
+def histogram(data, bins, xlabel):
+
+    return hv.Histogram(np.histogram(data, bins=bins, density=True)).opts(
+        xlabel=xlabel, width=500, height=500, shared_axes=False)
 
 
 def check_file(i):
@@ -251,13 +289,13 @@ config_schema = {
                     "tolerance": {"type": "number", "exclusiveMinimum": 0},
                     "ext": {"type": "string", "enum": ["classic", "stochastic"]}
                 }
-        },
+            },
         "plot": {
                 "type": "object",
                 "properties": {
                     "dpi": {"type": "integer", "minimum": 72}
                 }
-        },
+            },
         "local": {
                 "type": "object",
                 "properties": {
@@ -268,7 +306,7 @@ config_schema = {
                     "ohighmax": {"type": "number", "exclusiveMinimum": 1},
                     "ohighq1": {"type": "number", "exclusiveMinimum": 1}
                 }
-        },
+            },
         "ligand": {
                 "type": "object",
                 "properties": {
@@ -276,12 +314,18 @@ config_schema = {
                     "olowmin": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
                     "ohighmax": {"type": "number", "exclusiveMinimum": 1}
                 }
-        }
+            }
     }
 }
 
+
 def summury(input, output, mode, local_params, ligand_params, gmm_params, igmm_params, resolution):
     print('''
+tobvalid version 0.9.6
+
+----------------------------------------------------------------------------------------------------
+
+
 If the results of the program are useful for you please cite:
 
 "Local and global analysis of macromolecular Atomic Displacement Parameters". 
@@ -319,17 +363,24 @@ Used parameters are listed below:\n'''.format(input, output, mode))
     separator()
     print("Local ADP analysis parameters:")
     print("Radius for calculation neighbour's list(r_main): ", local_params[0])
-    print("Radius for \"water coordination\" calculations(r_water): ", local_params[1])
-    print("Criteria for marking atoms as light atoms: occ vs median < olowmin & occ vs third quartile < olowq3 (olowmin): {}, (olowq3): {}".format(local_params[2], local_params[3]))
-    print("Criteria for marking atoms as heavy atoms: occ vs median > ohighmax & occ vs first quartile > ohighq1 (ohighmax): {}, (ohighq1): {}".format(local_params[4], local_params[5]))
+    print("Radius for \"water coordination\" calculations(r_water): ",
+          local_params[1])
+    print("Criteria for marking atoms as light atoms: occ vs median < olowmin & occ vs third quartile < olowq3 (olowmin): {}, (olowq3): {}".format(
+        local_params[2], local_params[3]))
+    print("Criteria for marking atoms as heavy atoms: occ vs median > ohighmax & occ vs first quartile > ohighq1 (ohighmax): {}, (ohighq1): {}".format(
+        local_params[4], local_params[5]))
     separator()
     print("Ligand validation parameters:")
-    print("Radius for calculation neighbour's list(r_main): ", ligand_params[0])
-    print("Criteria for marking atoms as light atoms: occ vs median < olowmin (olowmin): ", ligand_params[1])
-    print("Criteria for marking atoms as heavy atoms: occ vs median > ohighmax (ohighmax): ", ligand_params[2])
+    print("Radius for calculation neighbour's list(r_main): ",
+          ligand_params[0])
+    print("Criteria for marking atoms as light atoms: occ vs median < olowmin (olowmin): ",
+          ligand_params[1])
+    print("Criteria for marking atoms as heavy atoms: occ vs median > ohighmax (ohighmax): ",
+          ligand_params[2])
+
 
 def separator():
-     print("----------------------------------------------------------------------------------------------------")
+    print("----------------------------------------------------------------------------------------------------")
 
 
 def main_func():
@@ -338,16 +389,20 @@ R.Masmaliyeva, K.Babai & G.Murshudov.
 Acta Cryst. D76 (to be published)''')
 
     requiredNamed = parser.add_argument_group('required arguments')
-    requiredNamed.add_argument("-i",  "--input", type=str, metavar="<pdb file>", help="Path to the pdb file.")
+    requiredNamed.add_argument(
+        "-i",  "--input", type=str, metavar="<pdb file>", help="Path to the pdb file.")
 
-    parser.add_argument("-o", "--output", type=str, metavar='<output file directory>', default=None, help="Output directory.")
-    parser.add_argument("-m", "--modes", metavar='<number of modes | auto>', default = 1, help="Number of modes. Must be positive integer ot 'auto'.")
-    parser.add_argument("-p", "--params", type=str, metavar='<json parameter file>', default = None, help="Path to the json config file")
+    parser.add_argument("-o", "--output", type=str,
+                        metavar='<output file directory>', default=None, help="Output directory.")
+    parser.add_argument("-m", "--modes", metavar='<number of modes | auto>',
+                        default=1, help="Number of modes. Must be positive integer ot 'auto'.")
+    parser.add_argument("-p", "--params", type=str, metavar='<json parameter file>',
+                        default=None, help="Path to the json config file")
 
     args = parser.parse_args()
 
     if args.input == None:
-        parser.error("the following arguments are required: -i/--input <pdb file>")
+        parser.error(
+            "the following arguments are required: -i/--input <pdb file>")
 
     return tobvalid(args.input, o=args.output, m=args.modes, p=args.params)
-    
