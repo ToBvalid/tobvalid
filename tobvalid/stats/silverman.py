@@ -51,7 +51,11 @@ def _modes(data, kernel, x_tol = 1e-5, rnd = 2, neighbour = 1):
                 break
         if is_max:
             result.append(np.round(line[i], rnd))  
-            
+    if len(result) == 0:
+        if neighbour > 1:
+            return _modes(data, kernel, x_tol, rnd, neighbour - 1)
+        else:
+            (len(result), result)
     result.sort()        
     result = _filter_bymax(_remove_dup(result, x_tol), kernel)
     return (len(result), result) 

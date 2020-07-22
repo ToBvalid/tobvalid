@@ -39,7 +39,7 @@ class BaseMixture:
         self._loglike = 0
         self.mix = np.ones(self.n_modes)/self.n_modes
         self.nit = 0
-        self._ext = "mm"
+        self._file_ext = "mm"
         self._check_initial_parameters(**kwargs)
         self._xlabel = "Values"
         self.__time = 0
@@ -250,12 +250,12 @@ class BaseMixture:
     def savehtml(self, path, filename, dpi=None):
         report = self.report(filename)
         htmlreport = HTMLReport(dpi)
-        htmlreport.save(report, path, filename + self._ext)
+        htmlreport.save(report, path, filename + self._file_ext)
 
     def savejson(self, path, filename, dpi=None):
         report = self.report(filename)
         jsonreport = JSONReport(dpi)
-        jsonreport.save(report, path, filename + self._ext)
+        jsonreport.save(report, path, filename + self._file_ext)
 
     def report(self, filename, dpi=None):
         pass

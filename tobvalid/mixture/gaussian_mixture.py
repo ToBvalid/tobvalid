@@ -16,9 +16,9 @@ from ._report import Report
 
 
 class GaussianMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-05, max_iter=200, **kwargs):
+    def __init__(self, n_modes=1, tol=1e-05, max_iter=1000, **kwargs):
         BaseMixture.__init__(self, n_modes, tol, max_iter, **kwargs)
-        self._ext = "_gmm"
+        self._file_ext = "_gmm"
         self._xlabel = "Peak Height Values"
 
     def _check_initial_custom_parameters(self, **kwargs):
@@ -75,11 +75,11 @@ class GaussianMixture(BaseMixture):
                           {' ': self._modes})
 
             report.image(plt, self.modeplot, filename + ".silverman" +
-                         self._ext, "Modes: {}".format(filename))
+                         self._file_ext, "Modes: {}".format(filename))
 
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 200], ["Number of Iterations", self.nit, 0]])
+                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 1000], ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 
@@ -89,6 +89,6 @@ class GaussianMixture(BaseMixture):
 
         title = "Gaussian Mixture: {}" if self.n_modes > 1 else "Gaussian Distribution: {}"
         report.image(plt, self.mixtureplot, filename + ".mixture" +
-                     self._ext, title.format(filename))
+                     self._file_ext, title.format(filename))
 
         return report

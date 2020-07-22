@@ -40,7 +40,7 @@ def tobvalid(i, o=None, m=1, p=None):
 
         (s, data, data_with_keys) = gp.gemmy_parse(i)
 
-        if s > 5:
+        if s > 20:
             return "Low resolution: not for automatic analysis. Not now."
             
         process_data(data)
@@ -84,9 +84,10 @@ def tobvalid(i, o=None, m=1, p=None):
     gauss.savehtml(out, file_name, dpi=resolution)
     mode = gauss.n_modes
 
-    inv = InverseGammaMixture(mode, tol=igmm_params[0], max_iter=igmm_params[1])
+    inv = InverseGammaMixture(mode, tol=igmm_params[0], max_iter=igmm_params[1], ext = igmm_params[2])
     inv.fit(data, z=z)
     inv.savehtml(out, file_name, dpi=resolution)
+
 
     if inv.n_modes == 1:
         if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
@@ -98,14 +99,19 @@ def process_data(data):
         raise ValueError(
             "Zero or minus values for B factors are observed. Please consider the structure model for re-refinement or contact the authors")
     if np.sum(data <= min(data)+0.0001*np.median(data)) >= 0.1*np.size(data):
-        raise ValueError("Too many values close to minimum: Possible overshapening case.")
+        raise ValueError("Too many values close to minimum: Possible oversharpening case.")
     if np.sum(data >= max(data) - 0.0001*np.median(data)) >= 0.1*np.size(data):
         raise ValueError("Too many values close to maximum: Possible upper limit problem.")
     if np.size(data) < 200:
         raise ValueError("Too few atoms for analysis")
-
-
-
+    udata,cnts = np.unique(data,return_counts=True) 
+    nps = np.size(data)
+  
+    if np.size(udata) <= max(10,int(0.01*nps)):
+        raise ValueError("Too many unique repeated values: B values may have not been refined properly")
+    if max(cnts) >= 0.05*nps:
+        raise ValueError("Some values are repeated more than 5% of times: B values may have not been refined properly")
+    
 def process_input(i):
     check_file(i)
     return os.path.basename(os.path.splitext(i)[0])
@@ -196,11 +202,12 @@ def get_ligand_params(parameters):
     return (r_main, olowmin,  ohighmax)
 
 def get_gmm_params(parameters):
-    return (get_value(parameters, ["gmm", "tolerance"], 1e-05), get_value(parameters, ["gmm", "maxiteration"], 200))
+    return (get_value(parameters, ["gmm", "tolerance"], 1e-05), get_value(parameters, ["gmm", "maxiteration"], 1000))
 
 
 def get_igmm_params(parameters):
-    return (get_value(parameters, ["igmm", "tolerance"], 1e-05), get_value(parameters, ["igmm", "maxiteration"], 200))
+    return (get_value(parameters, ["igmm", "tolerance"], 1e-04), get_value(parameters, ["igmm", "maxiteration"], 1000),
+    get_value(parameters, ["igmm", "ext"], "classic") )
 
 def get_plot_params(parameters):
     return (get_value(parameters, ["plot", "dpi"], 150))    
@@ -241,7 +248,8 @@ config_schema = {
                 "type": "object",
                 "properties": {
                     "maxiteration": {"type": "integer", "minimum": 1},
-                    "tolerance": {"type": "number", "exclusiveMinimum": 0}
+                    "tolerance": {"type": "number", "exclusiveMinimum": 0},
+                    "ext": {"type": "string", "enum": ["classic", "stochastic"]}
                 }
         },
         "plot": {
@@ -304,6 +312,7 @@ Used parameters are listed below:\n'''.format(input, output, mode))
     print("Shifted Inverse Gamma Mixture Model:")
     print("Tolerance: ", igmm_params[0])
     print("Max iteration: ", igmm_params[1])
+    print("EM extension: ", igmm_params[2])
     separator()
     print("Plotting parameters:")
     print("DPI: ", resolution)

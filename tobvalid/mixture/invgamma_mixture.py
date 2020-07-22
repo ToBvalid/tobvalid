@@ -11,29 +11,33 @@ import scipy.stats as st
 from scipy import special
 import matplotlib.pyplot as plt
 import matplotlib.colors as cl
-import numpy as np
+import scipy as sp
 import os
 import sys
 import seaborn as sns
 import pandas as pd
 from matplotlib import ticker
-
+from scipy.optimize import minimize_scalar
 from ._base import BaseMixture
 from ._report import Report
 
 
 class InverseGammaMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-5, max_iter=200):
-
+    def __init__(self, n_modes=1, tol=1e-5, max_iter=1000, ext="classic"):
+        
         if(n_modes == 'auto'):
             n_modes = 1
 
+        self._extenstions = ["classic", "stochastic"]
+        self._ext = ext
         BaseMixture.__init__(self, n_modes, tol, max_iter)
-        self._ext = "_sigd"
+        self._file_ext = "_sigd"
         self._xlabel = "Atomic B values"
 
+
     def _check_initial_custom_parameters(self, **kwargs):
-        return
+        if not (self._ext in  self._extenstions) :
+            raise ValueError("Unsupported EM extension: {}.".format(self._ext))
 
     def _check_parameters(self, X, **kwargs):
         if self._converged == False and not("z" in kwargs) and self.n_modes > 1:
@@ -68,20 +72,34 @@ class InverseGammaMixture(BaseMixture):
         ishift = self.shift.copy()
         ifvalue = self.loglike()
 
+        res = minimize_scalar(lambda x: self.__loglike(x, ss), bounds=(0, 1.2), method='bounded')
+        step = res.x
+  
         conv = False
+        j = np.random.randint(self.n_modes)
         while not conv:
-            self.alpha = np.maximum(
-                ialpha + step*ss[0], np.array([0.1]*self.n_modes))
-            self.betta = np.maximum(
-                ibetta + step*ss[1], np.array([0.1]*self.n_modes))
-            self.shift = ishift + step*ss[2]
+            
+            if self._ext == "classic":
+                self.alpha = np.maximum(
+                    ialpha + step*ss[0], np.array([0.1]*self.n_modes))
+                self.betta = np.maximum(
+                    ibetta + step*ss[1], np.array([0.1]*self.n_modes))
+                self.shift = ishift + step*ss[2]
+            elif self._ext == "stochastic":
+                self.alpha[j] = np.maximum(
+                    ialpha[j] + step*ss[0][j], np.array([0.1]*self.n_modes)[j])
+                self.betta[j] = np.maximum(
+                    ibetta[j] + step*ss[1][j], np.array([0.1]*self.n_modes)[j])
+                self.shift[j] = ishift[j] + step*ss[2][j]
+            else:
+                raise ValueError("Unsupported EM extension: {}.".format(self._ext))
 
-            self.CalcFisherMatrix()
-
-            if self._loglike > ifvalue:
+            loglike = self.__loglike(1, np.zeros((3, self.n_modes)))
+            if loglike > ifvalue:
                 step = step*0.5
             else:
                 conv = True
+                self._loglike = loglike
                 break
 
             if step <= self.epsilon:
@@ -116,7 +134,7 @@ class InverseGammaMixture(BaseMixture):
         xx = np.load(os.path.join(d, "templates/xx.npy"))
         yy = np.load(os.path.join(d, "templates/yy.npy"))
         kde = np.load(os.path.join(d, "templates/albe_kde.npy"))
-
+        
         N = 30
         locator = ticker.MaxNLocator(N + 1, min_n_ticks=N)
         lev = locator.tick_values(kde.min(), kde.max())
@@ -124,6 +142,11 @@ class InverseGammaMixture(BaseMixture):
         cfset = ax.contourf(xx, yy, kde, cmap='Reds', levels=lev[1:])
         fig.colorbar(cfset)
 
+        
+        y_max = max(max(self.alpha.max()*3, np.sqrt(self.betta).max()) + 3, 45)
+        x_max = y_max // 3
+        ax.set_xlim([0, x_max])
+        ax.set_ylim([0, y_max])
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\sqrt{\beta}$')
         plt.title(title)
@@ -166,6 +189,36 @@ class InverseGammaMixture(BaseMixture):
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
         plt.title(title)
+
+    def __loglike(self, a, grad):
+        w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
+
+        weightedLogDelta = np.zeros((self.n_modes))
+        weightedInverseDelta = np.zeros((self.n_modes))
+        inverseSquareDelta = np.zeros((self.n_modes))
+
+        for i in range(self.n_modes):
+
+            n = self.N[i]
+
+            zj = self.Z.T[i]
+            idx = self.data > self.shift[i] + a*grad[2][i]
+            delta = self.data[idx] - self.shift[i] - a*grad[2][i]
+
+            zj = zj[idx]
+
+
+            weightedLogDelta[i] = np.dot(zj, np.log(delta))
+            weightedInverseDelta[i] = np.sum(zj/delta)
+            inverseSquareDelta[i] = np.sum(zj/delta**2)
+
+
+        alpha = np.maximum(self.alpha + a*grad[0], np.array([0.1]*self.n_modes))
+        betta = np.maximum(self.betta + a*grad[1], np.array([0.1]*self.n_modes))
+
+
+        return np.dot(-self.N*alpha*np.log(betta) + self.N*special.gammaln(alpha) + betta*
+                               weightedInverseDelta + (alpha + 1)*weightedLogDelta + w*(alpha - self.al0)**2/2, self.mix)
 
     def CalcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
@@ -224,9 +277,7 @@ class InverseGammaMixture(BaseMixture):
 
     def shiftcalc(self, tol=1.0e-5):
 
-        # inv = np.linalg.inv(
-        #     self.__d2l + tol*np.random.randn(3*self.n_modes, 3*self.n_modes))
-        inv = np.linalg.pinv(self.__d2l, rcond=tol)
+        inv = sp.linalg.pinvh(self.__d2l)
         grad = np.transpose(np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
         shiftc = np.matmul(-inv, grad)
         return shiftc.reshape((self.n_modes, 3)).T
@@ -240,13 +291,15 @@ class InverseGammaMixture(BaseMixture):
             "Expecation Maximization of Inverse Gamma Mixture Model")
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
+                                                                ["EM extension", self._ext, "classic"],
                                                                 ["Number of modes",
                                                                     self.n_modes, 1],
                                                                 ["Tolerance",
-                                                                    self.tol, 1e-05],
+                                                                    self.tol, 1e-04],
                                                                 ["Maximum Iterations",
-                                                                    self.max_iter, 200],
-                                                                ["Number of Iterations", self.nit, 0]])
+                                                                    self.max_iter, 1000],
+                                                                ["Number of Iterations", self.nit, 0],
+                                                                ["Time in seconds", np.round(self.time(), 2), 0]])
 
         report.head("Output")
 
@@ -269,17 +322,17 @@ class InverseGammaMixture(BaseMixture):
 
         title = "Inverse Gamma Mixture: {}" if self.n_modes > 1 else "Inverse Gamma Distribution: {}"
         report.image(plt, self.mixtureplot, filename + ".mixture" +
-                     self._ext, title.format(filename))
+                     self._file_ext, title.format(filename))
         if(self.n_modes > 1):
             report.image(plt, self.clusterplot, filename +
-                         ".clusters" + self._ext, "Clusters: {}".format(filename))
+                         ".clusters" + self._file_ext, "Clusters: {}".format(filename))
         report.image(plt, self.probplot, filename + ".pp" +
-                     self._ext, "P-P Plot: {}".format(filename))
+                     self._file_ext, "P-P Plot: {}".format(filename))
         report.image(plt, self.qqplot, filename + ".qq" +
-                     self._ext, "Q-Q Plot: {}".format(filename))
+                     self._file_ext, "Q-Q Plot: {}".format(filename))
 
         report.image(plt, self.albeplot, filename + ".albe" +
-                     self._ext, "'Alpha-Beta Plot': {}".format(filename))
+                     self._file_ext, "'Alpha-Beta Plot': {}".format(filename))
 
         return report
 
