@@ -105,7 +105,7 @@ def tobvalid(i, o=None, m=1, p=None):
 
     inv = InverseGammaMixture(
         mode, tol=igmm_params[0], max_iter=igmm_params[1], ext=igmm_params[2])
-    inv.fit(data, z=z)
+    inv.fit(data, z=z, reg=[igmm_params[3]]*mode)
     inv.savehtml(out, file_name, dpi=resolution)
 
     if inv.n_modes == 1:
@@ -238,7 +238,7 @@ def get_gmm_params(parameters):
 
 def get_igmm_params(parameters):
     return (get_value(parameters, ["igmm", "tolerance"], 1e-04), get_value(parameters, ["igmm", "maxiteration"], 1000),
-            get_value(parameters, ["igmm", "ext"], "classic"))
+            get_value(parameters, ["igmm", "ext"], "classic"), get_value(parameters, ["igmm", "reg"], "square"))
 
 
 def get_plot_params(parameters):
@@ -289,7 +289,8 @@ config_schema = {
                 "properties": {
                     "maxiteration": {"type": "integer", "minimum": 1},
                     "tolerance": {"type": "number", "exclusiveMinimum": 0},
-                    "ext": {"type": "string", "enum": ["classic", "stochastic"]}
+                    "ext": {"type": "string", "enum": ["classic", "stochastic"]},
+                    "reg": {"type": "string", "enum": ["square", "exp"]}
                 }
             },
         "plot": {
@@ -360,6 +361,7 @@ Used parameters are listed below:\n'''.format(input, output, mode))
     print("Tolerance: ", igmm_params[0])
     print("Max iteration: ", igmm_params[1])
     print("EM extension: ", igmm_params[2])
+    print("Regularization: ", igmm_params[3])
     separator()
     print("Plotting parameters:")
     print("DPI: ", resolution)

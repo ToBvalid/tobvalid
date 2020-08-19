@@ -1,12 +1,14 @@
 """
 Author: "Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov"
 
-    
+
 This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
 """
 
 import numpy as np
+from numpy.core.records import array
+from numpy.lib.scimath import sqrt
 import scipy.stats as st
 from scipy import special
 import matplotlib.pyplot as plt
@@ -23,26 +25,71 @@ from ._report import Report
 
 
 class InverseGammaMixture(BaseMixture):
-    def __init__(self, n_modes=1, tol=1e-5, max_iter=1000, ext="classic"):
-        
+    def __init__(self, n_modes=1, tol=1e-5, max_iter=1000,  **kwargs):
+
         if(n_modes == 'auto'):
             n_modes = 1
 
-
-   
-        BaseMixture.__init__(self, n_modes, tol, max_iter)
+        BaseMixture.__init__(self, n_modes, tol, max_iter, **kwargs)
         self._file_ext = "_sigd"
         self._xlabel = "Atomic B values"
-
+        self._square_reg = "square"
+        self._exp_reg = "exp"
+        self._supported_reg_functions = [self._square_reg, self._exp_reg]
 
     def _check_parameters(self, X, **kwargs):
         if self._converged == False and not("z" in kwargs) and self.n_modes > 1:
             raise ValueError("Inverse Gamma Mixture requires 'z'")
 
+        if ("alpha" in kwargs):
+            al0 = kwargs["alpha"]
+            if not isinstance(al0, (np.ndarray)):
+                raise ValueError("Alpha: Expected ndarray, got {} instead.".format(al0))
+
+            if len(al0.shape) != 1:
+                raise ValueError(
+                    "Alpha: Expected one-dimentional ndarray, got {} instead.".format(al0))
+
+            if al0.shape[0] != self.n_modes :
+                raise ValueError(
+                    "Alpha: Expected one-dimentional ndarray with size {}, got {} instead.".format(self.n_modes, al0))
+
+            if not al0.dtype in [np.float32, np.float64, np.int]:
+                raise ValueError(
+                    "Alpha: Expected numerical ndarray, got {} instead.".format(al0))
+
+        if ("reg" in kwargs):
+            reg = kwargs["reg"]
+            if not isinstance(reg, (list, set)):
+                raise ValueError("Regularization: Expected list, got {} instead.".format(reg))
+
+            if len(reg) != self.n_modes :
+                raise ValueError(
+                    "Regularization: Expected one-dimentional list with size {}, got {} instead.".format(self.n_modes, reg))
+
+            if not all(elem in self._supported_reg_functions  for elem in reg):
+                raise ValueError(
+                    "Regularization: Expected {} in list, got {} instead.".format(self._supported_reg_functions, reg))
+
+                    
+        
+
     def _init_parameters(self, **kwargs):
         self.c = 0.1
-        self.al0 = np.array([3.5] + [10]*(self.n_modes - 1))
+       
+
+        if ("reg" in kwargs):
+            self._reg = kwargs["reg"]
+        else:
+            self._reg = ["square"]*self.n_modes
+
+        if ("alpha" in kwargs):
+            self.al0 = kwargs["alpha"]
+        else:
+            self.al0 = np.array([3.5] + [3.5**2]*(self.n_modes - 1))
+        
         self.sig = 0.1
+        self.w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
         self.epsilon = 1.0e-16
         self.step = 1
 
@@ -59,6 +106,19 @@ class InverseGammaMixture(BaseMixture):
         self.alpha = np.full(self.n_modes, 3.5)
         self.betta = (mdB - self.shift)*(self.alpha - 1)
 
+    def _optimize_cluster(self, i):
+        data = np.array(self.clusters()[i])
+        inv = InverseGammaMixture(n_modes=1, tol=1e-04, ext="classic")
+
+        inv.fit(data, z=None, alpha=self.al0[i:i+1], reg = ["exp"])
+        if inv.converged or inv.nit == inv.max_iter:
+            self.alpha[i] = inv.alpha[0]
+            self.betta[i] = inv.betta[0]
+            self.shift[i] = inv.shift[0]
+            self.mix[i] = len(data)/len(self.data)
+        return (inv.converged, inv.loglike())
+        
+
     def _optimize(self):
         self.__calcFisherMatrix()
         ss = self.__shiftcalc(self.epsilon)
@@ -68,27 +128,18 @@ class InverseGammaMixture(BaseMixture):
         ishift = self.shift.copy()
         ifvalue = self.loglike()
 
-        res = minimize_scalar(lambda x: self.__loglike(x, ss), bounds=(0, 1.2), method='bounded')
+        res = minimize_scalar(lambda x: self.__loglike(
+            x, ss), bounds=(0, 1.2), method='bounded')
         step = res.x
-  
+
         conv = False
-        j = np.random.randint(self.n_modes)
         while not conv:
-            
-            if self._ext == "classic":
-                self.alpha = np.maximum(
-                    ialpha + step*ss[0], np.array([0.1]*self.n_modes))
-                self.betta = np.maximum(
-                    ibetta + step*ss[1], np.array([0.1]*self.n_modes))
-                self.shift = ishift + step*ss[2]
-            elif self._ext == "stochastic":
-                self.alpha[j] = np.maximum(
-                    ialpha[j] + step*ss[0][j], np.array([0.1]*self.n_modes)[j])
-                self.betta[j] = np.maximum(
-                    ibetta[j] + step*ss[1][j], np.array([0.1]*self.n_modes)[j])
-                self.shift[j] = ishift[j] + step*ss[2][j]
-            else:
-                raise ValueError("Unsupported EM extension: {}.".format(self._ext))
+
+            self.alpha = np.maximum(
+                ialpha + step*ss[0], np.array([0.1]*self.n_modes))
+            self.betta = np.maximum(
+                ibetta + step*ss[1], np.array([0.1]*self.n_modes))
+            self.shift = ishift + step*ss[2]
 
             loglike = self.__loglike(1, np.zeros((3, self.n_modes)))
             if loglike > ifvalue:
@@ -105,6 +156,112 @@ class InverseGammaMixture(BaseMixture):
                 self._loglike = ifvalue
                 break
         return conv
+
+    def __loglike(self, a, grad):
+
+        weightedLogDelta = np.zeros((self.n_modes))
+        weightedInverseDelta = np.zeros((self.n_modes))
+        inverseSquareDelta = np.zeros((self.n_modes))
+
+        for i in range(self.n_modes):
+
+            n = self.N[i]
+
+            zj = self.Z.T[i]
+            idx = self.data > self.shift[i] + a*grad[2][i]
+            delta = self.data[idx] - self.shift[i] - a*grad[2][i]
+
+            zj = zj[idx]
+
+
+            weightedLogDelta[i] = np.dot(zj, np.log(delta))
+            weightedInverseDelta[i] = np.sum(zj/delta)
+            inverseSquareDelta[i] = np.sum(zj/delta**2)
+
+
+        alpha = np.maximum(self.alpha + a*grad[0], np.array([0.1]*self.n_modes))
+        betta = np.maximum(self.betta + a*grad[1], np.array([0.1]*self.n_modes))
+ 
+
+        return np.dot(-self.N*alpha*np.log(betta) + self.N*special.gammaln(alpha) + betta*
+                               weightedInverseDelta + (alpha + 1)*weightedLogDelta + self._regularization(alpha)[0], self.mix)    
+    
+    def _regularization(self, alpha):
+        reg = []
+        dreg = []
+        ddreg = []
+
+        for i in np.arange(self.n_modes):
+            if (self._reg[i] == self._exp_reg):
+                reg.append(np.exp(alpha[i] - self.al0[i]))
+                dreg.append(np.exp(alpha[i] - self.al0[i]))
+                ddreg.append(np.exp(alpha[i] - self.al0[i]))
+            else:
+                reg.append(self.w[i]*(alpha[i] - self.al0[i])**2/2)
+                dreg.append(self.w[i]*(alpha[i] - self.al0[i]))
+                ddreg.append(self.w[i])
+        return (np.array(reg), np.array(dreg), np.array(ddreg))
+        
+
+    def __calcFisherMatrix(self):
+      
+        self._loglike = 0
+        self.__d2l = np.zeros((3*self.n_modes, 3*self.n_modes))
+        self.__gradAlpha = [0]*self.n_modes
+        self.__gradBetta = [0]*self.n_modes
+        self.__gradB = [0]*self.n_modes
+
+        d2f = [0]*self.n_modes
+
+        weightedLogDelta = np.zeros((self.n_modes))
+        weightedInverseDelta = np.zeros((self.n_modes))
+        inverseSquareDelta = np.zeros((self.n_modes))
+
+        for i in range(self.n_modes):
+
+            n = self.N[i]
+
+            zj = self.Z.T[i]
+            idx = self.data > self.shift[i]
+            delta = self.data[idx] - self.shift[i]
+
+            zj = zj[idx]
+
+            weightedLogDelta[i] = np.dot(zj, np.log(delta))
+            weightedInverseDelta[i] = np.sum(zj/delta)
+            inverseSquareDelta[i] = np.sum(zj/delta**2)
+
+            alpha = self.alpha[i]
+            betta = self.betta[i]
+
+            w1 = self._regularization(self.alpha)[2][i]
+            d2f[i] = np.array([
+                [n*special.polygamma(1, alpha) + w1, -
+                 n/betta, -n*alpha/betta],
+                [-n/betta, n*alpha /
+                    np.power(betta, 2), n*alpha*(alpha + 1)/np.power(betta, 2)],
+                [-n*alpha/betta,  n*alpha*(alpha + 1)/np.power(betta, 2),  n*alpha*(alpha + 1)*(alpha + 3)/np.power(betta, 2)]])
+
+        self.__gradAlpha = self.N*special.psi(self.alpha) - self.N*np.log(
+            self.betta) + weightedLogDelta + self._regularization(self.alpha)[1]
+        self.__gradBetta = -self.N*self.alpha/self.betta + weightedInverseDelta
+        self.__gradB = self.betta*inverseSquareDelta - (self.alpha + 1)*weightedInverseDelta
+
+        self._loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta *
+                               weightedInverseDelta + (self.alpha + 1)*weightedLogDelta + self._regularization(self.alpha)[0], self.mix)
+
+        for i in range(self.n_modes):
+            for j in range(3):
+                for k in range(3):
+                    self.__d2l[3*i + j, k + 3*i] = self.mix[i]*d2f[i][j][k]
+
+
+    def __shiftcalc(self, tol=1.0e-5):
+
+        inv = sp.linalg.pinvh(self.__d2l)
+        grad = np.transpose(np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
+        shiftc = np.matmul(-inv, grad)
+        return shiftc.reshape((self.n_modes, 3)).T
 
     def __statistics__(self):
         nB = len(self.data)
@@ -186,98 +343,7 @@ class InverseGammaMixture(BaseMixture):
         plt.ylabel("Density")
         plt.title(title)
 
-    def __loglike(self, a, grad):
-        w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
-
-        weightedLogDelta = np.zeros((self.n_modes))
-        weightedInverseDelta = np.zeros((self.n_modes))
-        inverseSquareDelta = np.zeros((self.n_modes))
-
-        for i in range(self.n_modes):
-
-            n = self.N[i]
-
-            zj = self.Z.T[i]
-            idx = self.data > self.shift[i] + a*grad[2][i]
-            delta = self.data[idx] - self.shift[i] - a*grad[2][i]
-
-            zj = zj[idx]
-
-
-            weightedLogDelta[i] = np.dot(zj, np.log(delta))
-            weightedInverseDelta[i] = np.sum(zj/delta)
-            inverseSquareDelta[i] = np.sum(zj/delta**2)
-
-
-        alpha = np.maximum(self.alpha + a*grad[0], np.array([0.1]*self.n_modes))
-        betta = np.maximum(self.betta + a*grad[1], np.array([0.1]*self.n_modes))
-
-
-        return np.dot(-self.N*alpha*np.log(betta) + self.N*special.gammaln(alpha) + betta*
-                               weightedInverseDelta + (alpha + 1)*weightedLogDelta + w*(alpha - self.al0)**2/2, self.mix)
-
-    def __calcFisherMatrix(self):
-        w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
-
-        
-        self._loglike = 0
-        self.__d2l = np.zeros((3*self.n_modes, 3*self.n_modes))
-        self.__gradAlpha = [0]*self.n_modes
-        self.__gradBetta = [0]*self.n_modes
-        self.__gradB = [0]*self.n_modes
-
-        d2f = [0]*self.n_modes
-
-        weightedLogDelta = np.zeros((self.n_modes))
-        weightedInverseDelta = np.zeros((self.n_modes))
-        inverseSquareDelta = np.zeros((self.n_modes))
-
-        for i in range(self.n_modes):
-
-            n = self.N[i]
-
-            zj = self.Z.T[i]
-            idx = self.data > self.shift[i]
-            delta = self.data[idx] - self.shift[i]
-
-            zj = zj[idx]
-
-            weightedLogDelta[i] = np.dot(zj, np.log(delta))
-            weightedInverseDelta[i] = np.sum(zj/delta)
-            inverseSquareDelta[i] = np.sum(zj/delta**2)
-
-            alpha = self.alpha[i]
-            betta = self.betta[i]
-
-            w1 = w[i]
-            d2f[i] = np.array([
-                [n*special.polygamma(1, alpha) + w1, -
-                 n/betta, -n*alpha/betta],
-                [-n/betta, n*alpha /
-                    np.power(betta, 2), n*alpha*(alpha + 1)/np.power(betta, 2)],
-                [-n*alpha/betta,  n*alpha*(alpha + 1)/np.power(betta, 2),  n*alpha*(alpha + 1)*(alpha + 3)/np.power(betta, 2)]])
-
-        self.__gradAlpha = self.N*special.psi(self.alpha) - self.N*np.log(
-            self.betta) + weightedLogDelta + w*(self.alpha - self.al0)
-        self.__gradBetta = -self.N*self.alpha/self.betta + weightedInverseDelta
-        self.__gradB = self.betta*inverseSquareDelta - \
-            (self.alpha + 1)*weightedInverseDelta
-
-        self._loglike = np.dot(-self.N*self.alpha*np.log(self.betta) + self.N*special.gammaln(self.alpha) + self.betta *
-                               weightedInverseDelta + (self.alpha + 1)*weightedLogDelta + w*(self.alpha - self.al0)**2/2, self.mix)
-
-        for i in range(self.n_modes):
-            for j in range(3):
-                for k in range(3):
-                    self.__d2l[3*i + j, k + 3*i] = self.mix[i]*d2f[i][j][k]
-
-    def __shiftcalc(self, tol=1.0e-5):
-
-        inv = sp.linalg.pinvh(self.__d2l)
-        grad = np.transpose(np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
-        shiftc = np.matmul(-inv, grad)
-        return shiftc.reshape((self.n_modes, 3)).T
-
+ 
     def params(self):
         return {"mix": self.mix, "alpha": self.alpha, "betta": self.betta, "shift": self.shift}
 
@@ -300,7 +366,7 @@ class InverseGammaMixture(BaseMixture):
         report.head("Output")
 
         report.htable(["Distribution"] + list(range(1, self.n_modes + 1)),
-                      {'Mix parameters': np.round(self.mix, 3).tolist(), 'alpha': np.round(self.alpha, 3).tolist(), 'beta': np.round(self.betta, 3).tolist(), 'shift': np.round(self.shift, 3).tolist()})
+                      {'Mix parameters': np.round(self.mix, 3).tolist(), 'alpha': np.round(self.alpha, 3).tolist(), 'beta': np.round(self.betta, 3).tolist(), 'shift': np.round(self.shift, 3).tolist(), "regularization":self._reg})
 
         report.head('Parameters of B value distribution')
         report.htable(["",  ""],

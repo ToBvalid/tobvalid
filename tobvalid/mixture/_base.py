@@ -34,7 +34,7 @@ class BaseMixture:
         self._stochastic_ext = "stochastic"
         self._extenstions = [self._classic_ext, self._stochastic_ext]
         self._ext = ext
-        
+
         if n_modes == 'auto':
             self.n_modes = 1
             self._auto = True
@@ -103,18 +103,16 @@ class BaseMixture:
         self.nit = 0
 
         start = time.time()
-        if self._ext == self._stochastic_ext:
-            self._e_step()
 
         n_iter = 0
         for n_iter in np.arange(1, self.max_iter + 1):
 
             prev_lower_bound = lower_bound
             if self._ext == self._stochastic_ext:
+                self._e_step()
                 self._s_step()
                 if not self._m_step():
                     break
-                self._e_step()
             else:    
                 self._e_step()
                 if not self._m_step():
