@@ -35,7 +35,7 @@ class GaussianMixture(BaseMixture):
         self.sigma = np.ones(self.n_modes)*(mu_max-mu_min) / \
             (self.n_modes*np.sqrt(12.))
 
-    def _m_step(self):
+    def _optimize(self):
         N = np.sum(self.Z, axis=0)
         self.mu = np.sum((self.Z * self.data_n) *
                          np.reciprocal(N, dtype=float), axis=0)
@@ -51,6 +51,28 @@ class GaussianMixture(BaseMixture):
         wp = self._mix_values()
         self._loglike = -np.sum(np.log(wp[wp > 1e-07]))
         return True
+
+    def _optimize_cluster(self, i):
+        data = self.clusters()[i]
+
+        self.mu[i] = np.mean(data)
+
+        diff = data - self.mu[i]
+        diffSquare = diff*diff
+
+        self.sigma[i] = np.sqrt(np.mean(diffSquare))
+
+        self.mix[i] = len(data)/len(self.data)
+
+        wp = self._mode_pdf(data, i)
+
+        return (True, np.sum(np.log(wp[wp > 1e-07])))
+
+    def _mode_pdf(self, X, i):
+        u = (X - self.mu[i]) / np.abs(self.sigma[i])
+        y = (1 / (np.sqrt(2 * np.pi) *
+                  np.abs(self.sigma[i]))) * np.exp(-u * u / 2)
+        return y
 
     def params(self):
         return {"mix": self.mix, "mu": self.mu, "sigma": self.sigma}
@@ -79,7 +101,11 @@ class GaussianMixture(BaseMixture):
 
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 1000], ["Number of Iterations", self.nit, 0]])
+                                                                ["EM extension", self._ext, "classic"],
+                                                                ["Number of modes", self.n_modes, 1],
+                                                                ["Tolerance", self.tol, 1e-05],
+                                                                ["Maximum Iterations", self.max_iter, 1000], 
+                                                                ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 

@@ -96,7 +96,7 @@ def tobvalid(i, o=None, m=1, p=None):
     z = None
 
     p_data = ph.peak_height(data, s)
-    gauss = GaussianMixture(mode, tol=gmm_params[0], max_iter=gmm_params[1])
+    gauss = GaussianMixture(mode, tol=gmm_params[0], max_iter=gmm_params[1], ext=gmm_params[2])
     gauss.fit(p_data)
     if gauss.n_modes > 1:
         z = gauss.Z[:, ::-1]
@@ -232,7 +232,8 @@ def get_ligand_params(parameters):
 
 
 def get_gmm_params(parameters):
-    return (get_value(parameters, ["gmm", "tolerance"], 1e-05), get_value(parameters, ["gmm", "maxiteration"], 1000))
+    return (get_value(parameters, ["gmm", "tolerance"], 1e-05), get_value(parameters, ["gmm", "maxiteration"], 1000), 
+            get_value(parameters, ["gmm", "ext"], "classic"))
 
 
 def get_igmm_params(parameters):
@@ -279,7 +280,8 @@ config_schema = {
                 "type": "object",
                 "properties": {
                     "maxiteration": {"type": "integer", "minimum": 1},
-                    "tolerance": {"type": "number", "exclusiveMinimum": 0}
+                    "tolerance": {"type": "number", "exclusiveMinimum": 0},
+                    "ext": {"type": "string", "enum": ["classic", "stochastic"]}
                 }
             },
         "igmm": {
@@ -352,6 +354,7 @@ Used parameters are listed below:\n'''.format(input, output, mode))
     print("Gaussian Mixture Model:")
     print("Tolerance: ", gmm_params[0])
     print("Max iteration: ", gmm_params[1])
+    print("EM extension: ", gmm_params[2])
     separator()
     print("Shifted Inverse Gamma Mixture Model:")
     print("Tolerance: ", igmm_params[0])

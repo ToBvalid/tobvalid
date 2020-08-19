@@ -13,6 +13,7 @@ from ._html_generator import HTMLReport
 from ._json_generator import JSONReport
 import statsmodels.api as sm
 from ..stats import kde_silverman
+import itertools
 import time
 
 
@@ -23,12 +24,16 @@ class BaseMixture:
     provides basic common methods for mixture models.
     """
 
-    def __init__(self, n_modes, tol, max_iter, **kwargs):
+    def __init__(self, n_modes, tol, max_iter, ext="classic", **kwargs):
         self._converged = False
         self.n_modes = n_modes
         self._auto = False
         self.__fit = False
         self.__clusters = None
+        self._classic_ext = "classic"
+        self._stochastic_ext = "stochastic"
+        self._extenstions = [self._classic_ext, self._stochastic_ext]
+        self._ext = ext
         
         if n_modes == 'auto':
             self.n_modes = 1
@@ -43,6 +48,7 @@ class BaseMixture:
         self._check_initial_parameters(**kwargs)
         self._xlabel = "Values"
         self.__time = 0
+        
 
     def _check_initial_parameters(self, **kwargs):
         """Check values of the basic parameters.
@@ -62,6 +68,9 @@ class BaseMixture:
             raise ValueError("Invalid value for 'max_iter': %d "
                              "Estimation requires at least one iteration"
                              % self.max_iter)
+        
+        if not (self._ext in  self._extenstions) :
+            raise ValueError("Unsupported EM extension: {}.".format(self._ext))
 
         # Check all the parameters values of the derived class
         self._check_initial_custom_parameters(**kwargs)
@@ -71,12 +80,17 @@ class BaseMixture:
         self._check_parameters(X, **kwargs)
 
         self.data = X
+        self._s = np.zeros((self.n_modes, len(self.data)))
+
         if (self._auto == True):
             modes, kernel = kde_silverman(self.data)
             self.n_modes = modes[0]
             self._kernel = kernel
             self._modes = modes[1]
             self.mix = np.ones(self.n_modes)/self.n_modes
+
+        if self.n_modes == 1:
+           self._ext = self._classic_ext
 
         self.data_n = np.repeat(
             self.data[np.newaxis, ...], self.n_modes, axis=0).T
@@ -89,12 +103,22 @@ class BaseMixture:
         self.nit = 0
 
         start = time.time()
+        if self._ext == self._stochastic_ext:
+            self._e_step()
+
+        n_iter = 0
         for n_iter in np.arange(1, self.max_iter + 1):
 
             prev_lower_bound = lower_bound
-            self._e_step()
-            if not self._m_step():
-                break
+            if self._ext == self._stochastic_ext:
+                self._s_step()
+                if not self._m_step():
+                    break
+                self._e_step()
+            else:    
+                self._e_step()
+                if not self._m_step():
+                    break
 
             lower_bound = self.loglike()
 
@@ -103,6 +127,7 @@ class BaseMixture:
             if n_iter > 1 and np.abs(change/prev_lower_bound) < self.tol:
                 self._converged_ = True
                 break
+
         self.__time = time.time() - start       
         self.nit = n_iter
         self.__ppplot = sm.ProbPlot(self.data, self, fit=False)  
@@ -183,10 +208,11 @@ class BaseMixture:
     def __clusterize(self):
         self.__clusters = [[] for i in range(self.n_modes)]
 
-        for d, z in zip(self.data, self.Z):
-            self.__clusters[np.random.choice(np.arange(self.n_modes), 1, p=z)[
-                0]].append(d)
-
+        belongness_coeff =  self._cluster_belongness().astype('bool')
+        i = 0
+        for s in belongness_coeff:
+             self.__clusters[i] = list(itertools.compress(self.data, s))
+             i = i + 1
 
     def mixtureplot(self, plt, title="Mixture"):
 
@@ -312,7 +338,38 @@ class BaseMixture:
     def _e_step(self):
         self._calc_posterior_z()
         self.N = np.sum(self.Z.T, axis=1)
-        self.mix = self.N*(1/np.sum(self.N))
+        if self._ext != self._stochastic_ext:
+            self.mix = self.N*(1/np.sum(self.N))
+
+    def _s_step(self):
+        self.__clusterize()
+
+    def _cluster_belongness(self):
+        result = []
+        for z in self.Z:
+            result.append(np.random.multinomial(1, z))
+        return np.vstack(result).T
+    
+
+    def _optimize(self):
+        pass
+
+    def _optimize_cluster(self, i):
+        pass
 
     def _m_step(self):
-        pass
+        if self._ext == self._classic_ext:
+            return self._optimize()
+        if self._ext == self._stochastic_ext:
+            loglike = 0
+            for i in np.arange(self.n_modes):
+                result = self._optimize_cluster(i)
+                if not result[0]:
+                    return False
+                loglike = loglike + result[1]
+            self._loglike = loglike
+            return True    
+        return False    
+            
+
+    

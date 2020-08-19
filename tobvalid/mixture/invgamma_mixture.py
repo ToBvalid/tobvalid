@@ -28,16 +28,12 @@ class InverseGammaMixture(BaseMixture):
         if(n_modes == 'auto'):
             n_modes = 1
 
-        self._extenstions = ["classic", "stochastic"]
-        self._ext = ext
+
+   
         BaseMixture.__init__(self, n_modes, tol, max_iter)
         self._file_ext = "_sigd"
         self._xlabel = "Atomic B values"
 
-
-    def _check_initial_custom_parameters(self, **kwargs):
-        if not (self._ext in  self._extenstions) :
-            raise ValueError("Unsupported EM extension: {}.".format(self._ext))
 
     def _check_parameters(self, X, **kwargs):
         if self._converged == False and not("z" in kwargs) and self.n_modes > 1:
@@ -63,9 +59,9 @@ class InverseGammaMixture(BaseMixture):
         self.alpha = np.full(self.n_modes, 3.5)
         self.betta = (mdB - self.shift)*(self.alpha - 1)
 
-    def _m_step(self):
-        self.CalcFisherMatrix()
-        ss = self.shiftcalc(self.epsilon)
+    def _optimize(self):
+        self.__calcFisherMatrix()
+        ss = self.__shiftcalc(self.epsilon)
         step = self.step
         ialpha = self.alpha.copy()
         ibetta = self.betta.copy()
@@ -220,7 +216,7 @@ class InverseGammaMixture(BaseMixture):
         return np.dot(-self.N*alpha*np.log(betta) + self.N*special.gammaln(alpha) + betta*
                                weightedInverseDelta + (alpha + 1)*weightedLogDelta + w*(alpha - self.al0)**2/2, self.mix)
 
-    def CalcFisherMatrix(self):
+    def __calcFisherMatrix(self):
         w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
 
         
@@ -275,7 +271,7 @@ class InverseGammaMixture(BaseMixture):
                 for k in range(3):
                     self.__d2l[3*i + j, k + 3*i] = self.mix[i]*d2f[i][j][k]
 
-    def shiftcalc(self, tol=1.0e-5):
+    def __shiftcalc(self, tol=1.0e-5):
 
         inv = sp.linalg.pinvh(self.__d2l)
         grad = np.transpose(np.array([self.__gradAlpha, self.__gradBetta, self.__gradB])).flatten()
