@@ -11,6 +11,7 @@ import numpy as np
 from scipy.special import erf
 import pandas as pd
 import warnings
+from ..report import Report
 
 
 def occupancy_estimate(b1, b2, smax):
@@ -112,17 +113,20 @@ def l2df(mylist, mydf):
     return(mybool)
 
 
-def ligand_validation(input_path, output_path, r_main=4.2, olowmin = 0.7, ohighmax = 1.2):
+def ligand_validation(input_path, r_main=4.2, olowmin = 0.7, ohighmax = 1.2):
     
     st, s, B_with_keys, B, subcells, residues, name = parse_an(input_path, r_main)
     smax = 1/s
     ligands = []
-    F = open(output_path + "/"+name+"_ligand.txt", "w")
-    F.write("Analysis results for all ligands within the structure model.\n\nThe list of neighbours are calculated using the radius {r}A \n\n\n".format(r = r_main))
-    F.close()
-    F2 = open(output_path + "/ligands_validation.txt", "w")
-    F2.write("List of ligans with unusual character.\n\nThe list of neighbours are calculated using the radius {r}A \n\n\n".format(r = r_main))
-    F2.close()
+    ligand_report = Report("Analysis results for all ligands within the structure model")
+    ligand_report.head("")
+    ligand_report.text("The list of neighbours are calculated using the radius {r}A".format(r = r_main))
+    
+    ligand_validation_report = Report("List of ligans with unusual character")
+    ligand_validation_report.head("")
+    ligand_validation_report.text("The list of neighbours are calculated using the radius {r}A".format(r = r_main))
+
+
     
     for r in residues:
         if r.het_flag == 'H' and r.name != 'HOH':
@@ -167,18 +171,17 @@ def ligand_validation(input_path, output_path, r_main=4.2, olowmin = 0.7, ohighm
         ccm2 = np.median(Bn)
         ccm_ph = occupancy_estimate(ccm1, ccm2, smax)
         ccm_td = occupancy_estimate((ccm1+ccm2), (ccm2*2), smax)
-        F = open(output_path + "/"+name+"_ligand.txt", "a")
-        F.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand B: {ccm1} , neighs B: {ccm2} \n".format(
+
+        ligand_report.text("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand B: {ccm1} , neighs B: {ccm2}".format(
             pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=round(ccm_td, 2), ph=round(ccm_ph, 2), ccm1=round(ccm1, 2), ccm2=round(ccm2, 2)))
-        F.close()
-        F2 = open(output_path + "/ligands_validation.txt", "a")
+
         if ccm_td < olowmin or ccm_td > ohighmax:
-            F2.write("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand B: {ccm1} , neighs B: {ccm2} \n".format(
+
+            ligand_validation_report.text("pdb: {pdb} , chain: {chain} , residue: {name} , serial: {n} ,  occ = {occ} , PH = {ph}, ligand B: {ccm1} , neighs B: {ccm2}".format(
             pdb=name, chain=tc1, name=l.name, n=l.seqid, occ=round(ccm_td, 2), ph=round(ccm_ph, 2), ccm1=round(ccm1, 2), ccm2=round(ccm2, 2)))
-        F2.close()
+    return [ligand_report, ligand_validation_report]
 
-
-def local_analysis(input_path, ouput_path, r_main = 4.2, r_wat = 3.2, olowmin = 0.7, olowq3 = 0.99, ohighmax = 1.2, ohighq1 = 1.01):
+def local_analysis(input_path, r_main = 4.2, r_wat = 3.2, olowmin = 0.7, olowq3 = 0.99, ohighmax = 1.2, ohighq1 = 1.01):
     
 
 
@@ -189,16 +192,15 @@ def local_analysis(input_path, ouput_path, r_main = 4.2, r_wat = 3.2, olowmin = 
     water = {}
 
     #ligands = []
+    
+    local_report = Report("Local B value analysis within the radius of {r}A \n\n".format(r = r_main))
+    local_report.head("")
 
-    local_path = ouput_path + "/"+ mypdb +"_local.txt"
-    water_path = ouput_path + "/"+ mypdb +"_water.txt"
 
-    F = open(local_path, "w")
-    F.write("Local B value analysis within the radius of {r}A \n\n".format(r = r_main))
-    F.close()
-    F2 = open(water_path, "w")
-    F2.write("Water molecules with number of neighbours 6 and more are listed below: \n\nThe list of neighbours are calculated using the radius {r}A \n\n\n\n".format(r = r_wat))
-    F2.close() 
+    water_report = Report("Water molecules with number of neighbours 6 and more")
+    water_report.head("")
+    water_report.text("Water molecules with number of neighbours 6 and more are listed below:")
+    water_report.text("The list of neighbours are calculated using the radius {r}A".format(r = r_wat))
 
 
     phl = ["Potentially lighter atom", "Potentially heavier atom"]
@@ -270,24 +272,32 @@ def local_analysis(input_path, ouput_path, r_main = 4.2, r_wat = 3.2, olowmin = 
                 water[w] = {'atom': ta, 'residue number': tri, 'residue': tr, 'chain': tc, 'B factor': round(Bval, 2), 'neighbours number': ml1, 'neighbours median B': round(bmedian1, 2), 'occ' :round(ccm, 2)}
 
     for i in res_lh:
-        F = open(local_path, "a")
-        F.write(
-            "\n\n=============================================================================\n\n")
-        F.write("{phl} with optimal occupancy :  {occ}  \n".format(
+
+        local_report.text("=============================================================================")
+        local_report.text("{phl} with optimal occupancy :  {occ}".format(
             phl=phl[res_lh[i]['local']['hl']], occ=res_lh[i]['local']['occ']))
-        F.write("\n  atom: {atom} residue: {rn} {r} chain: {chain}, B value: {B} \n".format(
-            atom=res_lh[i]['atom']['atom'], rn=res_lh[i]['atom']['residue_number'], r=res_lh[i]['atom']['residue'], chain=res_lh[i]['atom']['chain'], B=res_lh[i]['atom']['B_factor']))
-        F.write("\n   Neighbors:\n")
+        local_report.text("     atom: {atom} residue: {rn} {r} chain: {chain}, B value: {B}".format(
+            atom=res_lh[i]['atom']['atom'], rn=res_lh[i]['atom']['residue_number'], r=res_lh[i]['atom']['residue'], chain=res_lh[i]['atom']['chain'], B=res_lh[i]['atom']['B_factor']), 1)
+        local_report.text("Neighbors:", 1)
+        
+       
         for k in range(len(res_lh[i]['neighbours'][0])):
-            F.write("       atom: {serial}  {atom}, B value: {B} \n".format(
-                serial=res_lh[i]['neighbours'][0][k], atom=res_lh[i]['neighbours'][1][k], B=res_lh[i]['neighbours'][2][k]))
-        # F.write("\n")
-        F.write("\n\n   Basic statistics: \n")
-        F.write("       number of neighbors: {an_num} \n       mean B value: {meanB} \n       STD: {std} \n       z value: {z} \n       median: {median} \n       1st quartile: {fstQ} \n       3rd quartile: {trdQ} \n".format(
-            an_num=res_lh[i]['stats']['neighbour_num'], meanB=res_lh[i]['stats']['meanB'], std=res_lh[i]['stats']['std'], z=res_lh[i]['stats']['z_value'], median=res_lh[i]['stats']['B_median'], fstQ=res_lh[i]['stats']['1stQ'], trdQ=res_lh[i]['stats']['3rdQ']))
-        F.close()
+             local_report.text("atom: {serial}  {atom}, B value: {B}".format(
+                serial=res_lh[i]['neighbours'][0][k], atom=res_lh[i]['neighbours'][1][k], B=res_lh[i]['neighbours'][2][k]), 2)
+        
+        local_report.text("")
+        local_report.text("Basic statistics:", 1)
+        local_report.text("number of neighbors: {an_num}".format(an_num=res_lh[i]['stats']['neighbour_num']), 2)
+        local_report.text("mean B value: {meanB}".format(meanB=res_lh[i]['stats']['meanB']), 2)
+        local_report.text("STD: {std}".format(std=res_lh[i]['stats']['std']), 2)
+        local_report.text("z value: {z}".format(z=res_lh[i]['stats']['z_value']), 2)
+        local_report.text("median: {median}".format(median=res_lh[i]['stats']['B_median']), 2)
+        local_report.text("1st quartile: {fstQ}".format(fstQ=res_lh[i]['stats']['1stQ']), 2)
+        local_report.text("3rd quartile: {trdQ}".format(trdQ=res_lh[i]['stats']['3rdQ']), 2)
+        
 
     for w in water:
-        F = open(water_path, "a")
-        F.write(str(water[w])+"\n")
-        F.close()
+        water_report.text(str(water[w]))
+    
+
+    return [local_report, water_report]

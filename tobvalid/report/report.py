@@ -108,13 +108,17 @@ class Head(Nest):
 
 
 class Text(Element):
-    def __init__(self, parent, text, name=None):
+    def __init__(self, parent, text, indent = 0, name=None):
         Element.__init__(self, parent)
         self.__text = text
         self.__name = name
+        self.__indent = indent
+
+    def indent(self):
+        return self.__indent
 
     def text(self):
-        return self.__text
+        return self.__text    
 
     def name(self):
         return self.__name
@@ -147,8 +151,8 @@ class Report:
         self.__last().addchild(Plot(self.__last(), name, figure, func, title))
         return self
 
-    def text(self, string, name=None):
-        self.__last().addchild(Text(self.__last(), string, name))
+    def text(self, string, indent = 0, name=None):
+        self.__last().addchild(Text(self.__last(), string, indent, name))
         return self
 
     def vtable(self, columns, data, name=""):
@@ -179,16 +183,22 @@ class ReportGenerator:
         self._dpi = dpi
 
     def save(self, report, path, name):
-        self._open()
+        self._prepare(report)
         self._dir = path
+        self._save(name + self._extension)
+    
+    def save_reports(self, reports, path, name):
+        pass
+
+    def _prepare(self, report):
+        self._open()
 
         self._title(report.title())
         for element in report.items():
             self._write(element)
 
         self._close()
-        self._save(name + self._extension)
-
+    
     def _write(self, element):
         if isinstance(element, Head):
             return self._head(element)
@@ -201,6 +211,9 @@ class ReportGenerator:
 
         elif isinstance(element, Plot):
             return self._image(element, self._dpi)
+
+        elif isinstance(element, Text):
+            return self._text(element)    
 
     def __open(self):
         pass
@@ -221,6 +234,9 @@ class ReportGenerator:
         pass
 
     def _htable(self, table):
+        pass
+
+    def _text(self, text):
         pass
 
     def _close(self):

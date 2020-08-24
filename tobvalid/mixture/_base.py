@@ -6,15 +6,15 @@ This software is released under the
 Mozilla Public License, version 2.0; see LICENSE.
 """
 
+from holoviews.element.chart import Curve
 import numpy as np
 import seaborn as sns
 from scipy.optimize import root_scalar
-from ._html_generator import HTMLReport
-from ._json_generator import JSONReport
+from ..report import HTMLReport
+from ..report import JSONReport
 import statsmodels.api as sm
 from ..stats import kde_silverman
 import time
-
 
 class BaseMixture:
     """Base class for mixture models.
@@ -189,24 +189,26 @@ class BaseMixture:
 
 
     def mixtureplot(self, plt, title="Mixture"):
-
+        
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
-
-        plt.figure()
+        
+        fig = plt.figure()
         sns.set_style("white")
         sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
             edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
+        
         values = self.pdf(x)
-
         plt.plot(x, values, color='black')
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
         plt.title(title)
+        
+        return fig
 
     def probplot(self, plt, title='P-P Plot'):
-        plt.figure()
-        self.__ppplot.ppplot(line='45', color='blue')
+        fig = self.__ppplot.ppplot(line='45', color='blue')
         plt.title(title)
+        return fig
 
     def qqplot(self, plt, title='Q-Q Plot'):
 
@@ -218,7 +220,7 @@ class BaseMixture:
         else:
             k = 1
         x1 = self.ppf(y[:-1:k])
-        plt.figure()
+        fig = plt.figure()
 
         line = np.linspace(min(self.data), max(self.data), 100)
         plt.plot(x1, x[:-1:k], linewidth=6, color='blue')
@@ -229,11 +231,13 @@ class BaseMixture:
         plt.ylabel("Sample Quantiles")
         plt.title(title)
 
+        return fig
+
     def modeplot(self, plt, title="Modes"):
 
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
 
-        plt.figure()
+        fig = plt.figure()
         sns.set_style("white")
         sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
             edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
@@ -246,6 +250,8 @@ class BaseMixture:
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
         plt.title(title)
+
+        return fig
 
     def savehtml(self, path, filename, dpi=None):
         report = self.report(filename)

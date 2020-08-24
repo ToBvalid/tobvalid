@@ -7,6 +7,8 @@ Mozilla Public License, version 2.0; see LICENSE.
 """
 
 import argparse
+import re
+from tobvalid.report.html_generator import HTMLReport
 from tobvalid.mixture.gaussian_mixture import GaussianMixture
 from tobvalid.mixture.invgamma_mixture import InverseGammaMixture
 import tobvalid.stats.silverman as sv
@@ -72,46 +74,78 @@ def tobvalid(i, o=None, m=1, p=None):
 
         return e
 
+    reports = dict()
+    local_reports = []
     p_data = ph.peak_height(data, s)
 
-    ot.print_outliers(out + "/Interquartile outliers.txt",
-                      data, data_with_keys)
+    outlier_report = ot.print_outliers(data, data_with_keys)
 
-    data = ot.remove_outliers(data)
+    data, data_index = ot.remove_outliers(data)
 
-    lc.local_analysis(i, out,
+    local_reports.extend(lc.local_analysis(i,
                       r_main=local_params[0],
                       r_wat=local_params[1],
                       olowmin=local_params[2],
                       olowq3=local_params[3],
                       ohighmax=local_params[4],
                       ohighq1=local_params[5]
-                      )
-    lc.ligand_validation(i, out,
+                      ))
+    local_reports.extend(lc.ligand_validation(i,
                          r_main=ligand_params[0],
                          olowmin=ligand_params[1],
                          ohighmax=ligand_params[2],
-                         )
+                         ))
+    reports["Local Analysis"] = local_reports
 
     z = None
 
+    global_reports = []
     p_data = ph.peak_height(data, s)
     gauss = GaussianMixture(mode, tol=gmm_params[0], max_iter=gmm_params[1])
     gauss.fit(p_data)
     if gauss.n_modes > 1:
         z = gauss.Z[:, ::-1]
-    gauss.savehtml(out, file_name, dpi=resolution)
-    mode = gauss.n_modes
+    global_reports.append(gauss.report(file_name))
 
+    mode = gauss.n_modes
     inv = InverseGammaMixture(
         mode, tol=igmm_params[0], max_iter=igmm_params[1], ext=igmm_params[2])
     inv.fit(data, z=z)
-    inv.savehtml(out, file_name, dpi=resolution)
+    global_reports.append(inv.report(file_name))
+
+    if mode > 1:
+        cluster_report(out + "/cluster report.txt" , inv.Z, data_with_keys, data_index)
+    
+    global_reports.append(outlier_report)
+    
+
+    reports["Global Analysis"] = global_reports
+    HTMLReport(dpi=resolution).save_reports(reports, out, file_name)
+    
 
     if inv.n_modes == 1:
         if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
             print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
+def cluster_report(path, Z, B_with_keys, data_index):
+    cluster_report = open(path, "w")
+    i = 0
+    for key in data_index:
+        B = B_with_keys[key]
+        text = str(B[0])
+        text=re.sub("\[<gemmi.", "", text)
+        text=re.sub("with .+ res>, <gemmi\.", "", text)
+        text=re.sub("with .+ atoms>, <gemmi\.", "", text)
+        text=re.sub(">]", " B value: ", text)
+        text = text + str(np.round(B[1], 3))
+        probs = "."
+        for j in np.arange(Z.shape[1]):
+            probs = probs + " Cluster {}: {}".format(j + 1, np.round(Z[i][j], 2)) 
+        text = text + probs
+        cluster_report.write(text)
+        cluster_report.write("\n")
+        i = i + 1
+    cluster_report.close()     
 
 def process_data(data):
     if min(data) < 0:

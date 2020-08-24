@@ -12,7 +12,7 @@ import scipy.special as special
 
 
 from ._base import BaseMixture
-from ._report import Report
+from ..report import Report
 
 
 class GaussianMixture(BaseMixture):
@@ -79,7 +79,10 @@ class GaussianMixture(BaseMixture):
 
         report.head("Input")
         report.vtable(["Parameter", "Value", "Default Value"], [["File", filename, ""],
-                                                                ["Number of modes", self.n_modes, 1], ["Tolerance", self.tol, 1e-05], ["Maximum Iterations", self.max_iter, 1000], ["Number of Iterations", self.nit, 0]])
+                                                                ["Number of modes", self.n_modes, 1],
+                                                                ["Tolerance", self.tol, 1e-05], 
+                                                                ["Maximum Iterations", self.max_iter, 1000], 
+                                                                ["Number of Iterations", self.nit, 0]])
 
         report.head("Output")
 

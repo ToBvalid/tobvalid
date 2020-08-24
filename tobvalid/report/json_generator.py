@@ -7,7 +7,7 @@ Mozilla Public License, version 2.0; see LICENSE.
 """
 
 
-from ._report import ReportGenerator
+from .report import ReportGenerator
 import json
 
 

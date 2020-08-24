@@ -19,7 +19,7 @@ import pandas as pd
 from matplotlib import ticker
 from scipy.optimize import minimize_scalar
 from ._base import BaseMixture
-from ._report import Report
+from ..report import Report
 
 
 class InverseGammaMixture(BaseMixture):
@@ -150,12 +150,13 @@ class InverseGammaMixture(BaseMixture):
         plt.xlabel(r'$\alpha$')
         plt.ylabel(r'$\sqrt{\beta}$')
         plt.title(title)
+        return fig
 
     def clusterplot(self, plt, title="Clusters"):
 
         if self.n_modes == 1:
             return
-        plt.figure()
+        fig = plt.figure()
         clusters = self.clusters()
         x = np.linspace(start=min(self.data), stop=max(self.data), num=1000)
         clust_num = np.concatenate(
@@ -189,6 +190,8 @@ class InverseGammaMixture(BaseMixture):
         plt.xlabel(self._xlabel)
         plt.ylabel("Density")
         plt.title(title)
+
+        return fig
 
     def __loglike(self, a, grad):
         w = np.array([1/self.sig**2] + [1/self.sig]*(self.n_modes - 1))
@@ -335,6 +338,8 @@ class InverseGammaMixture(BaseMixture):
                      self._file_ext, "'Alpha-Beta Plot': {}".format(filename))
 
         return report
+
+        
 
     def _pdf(self, X):
         dist = st.invgamma(self.alpha, self.shift, self.betta)
