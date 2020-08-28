@@ -54,3 +54,30 @@ def gemmy_parse(file):
     B = np.asarray(B)
 
     return (s, B, B_with_keys)
+
+def chains(B_with_keys):
+    l = len(B_with_keys)
+    chv = []
+    
+    for i in range(l):
+        ch = B_with_keys[i][0][0]
+        ch = ch.name
+        chv.append(ch)
+    ch_names = np.ndarray.tolist(np.unique(chv))
+    w = np.where(np.roll(chv,1)!=chv)[0]
+    w = np.ndarray.tolist(w)
+    w.append(l)    
+    chB = {}   
+    k = 0
+    l2 = len(w)-1
+    for i in range(l2):
+        Bs = []
+        ii = i+1
+        start = w[i]
+        stop = w[ii]
+        for j in range(start, stop):
+            Bs.append(B_with_keys[j][1])
+        chB[k] = Bs
+        k = k + 1
+        
+    return(ch_names, chB)

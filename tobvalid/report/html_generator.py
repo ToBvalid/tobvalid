@@ -51,7 +51,7 @@ class HTMLReport(ReportGenerator):
     def save_reports(self, reports, path, name):
         
         panel = pn.Tabs()
-        
+        self._dir = path  
         if isinstance(reports, List):
             self._save_report_list(reports, panel)
 
@@ -61,13 +61,13 @@ class HTMLReport(ReportGenerator):
                 self._save_report_list(reports[key], pnl)
                 panel.append((key, pnl))
 
-        self._dir = path           
-        panel.save(self._dir + "/" + name + self._extension, resources=INLINE, title="{} Report".format(name))
+                 
+        panel.save(self._dir + "/" + name + self._extension, resources=INLINE, title="{} Report".format(name), embed=True)
     
     def _save_report_list(self, reports, panel):
          for report in reports:
             html = HTMLReport(dpi=self._dpi)
-            html._prepare(report)
+            html._prepare(report, self._dir)
             panel.append((report.title(), html.__panel))
 
     def _open(self):
@@ -84,6 +84,7 @@ class HTMLReport(ReportGenerator):
         return self
 
     def _image(self, plot, dpi=None):
+
         self.__panel.append(pn.pane.Matplotlib(plot.func()(
             plot.figure(), plot.title()), dpi=self._dpi, tight=True))
         return self
@@ -131,6 +132,13 @@ class HTMLReport(ReportGenerator):
     def _text(self, text):
         self.__panel.append(pn.pane.HTML(text.text(), style={"padding-left":"{}px".format(30*text.indent()), "text-align": "left"}))
         return self
+
+    def _texts(self, texts):
+        res = ""
+        for text in texts.texts():
+            res = res + '<div style="text-indent:{}px;text-align: left">'.format(30*text.indent()) + text.text() + '</div>'
+        self.__panel.append(pn.pane.HTML(res))
+        return self    
 
     def _close(self):
         return self

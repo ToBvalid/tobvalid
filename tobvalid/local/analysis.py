@@ -199,8 +199,8 @@ def local_analysis(input_path, r_main = 4.2, r_wat = 3.2, olowmin = 0.7, olowq3 
 
     water_report = Report("Water molecules with number of neighbours 6 and more")
     water_report.head("")
-    water_report.text("Water molecules with number of neighbours 6 and more are listed below:")
-    water_report.text("The list of neighbours are calculated using the radius {r}A".format(r = r_wat))
+    water_report.texts("Water molecules with number of neighbours 6 and more are listed below:")
+    water_report.texts("The list of neighbours are calculated using the radius {r}A".format(r = r_wat))
 
 
     phl = ["Potentially lighter atom", "Potentially heavier atom"]
@@ -273,31 +273,32 @@ def local_analysis(input_path, r_main = 4.2, r_wat = 3.2, olowmin = 0.7, olowq3 
 
     for i in res_lh:
 
-        local_report.text("=============================================================================")
-        local_report.text("{phl} with optimal occupancy :  {occ}".format(
+        
+        local_report.texts("=============================================================================")
+        local_report.texts("{phl} with optimal occupancy :  {occ}".format(
             phl=phl[res_lh[i]['local']['hl']], occ=res_lh[i]['local']['occ']))
-        local_report.text("     atom: {atom} residue: {rn} {r} chain: {chain}, B value: {B}".format(
+        local_report.texts("     atom: {atom} residue: {rn} {r} chain: {chain}, B value: {B}".format(
             atom=res_lh[i]['atom']['atom'], rn=res_lh[i]['atom']['residue_number'], r=res_lh[i]['atom']['residue'], chain=res_lh[i]['atom']['chain'], B=res_lh[i]['atom']['B_factor']), 1)
-        local_report.text("Neighbors:", 1)
+        local_report.texts("Neighbors:", 1)
         
        
         for k in range(len(res_lh[i]['neighbours'][0])):
-             local_report.text("atom: {serial}  {atom}, B value: {B}".format(
+             local_report.texts("atom: {serial}  {atom}, B value: {B}".format(
                 serial=res_lh[i]['neighbours'][0][k], atom=res_lh[i]['neighbours'][1][k], B=res_lh[i]['neighbours'][2][k]), 2)
         
-        local_report.text("")
-        local_report.text("Basic statistics:", 1)
-        local_report.text("number of neighbors: {an_num}".format(an_num=res_lh[i]['stats']['neighbour_num']), 2)
-        local_report.text("mean B value: {meanB}".format(meanB=res_lh[i]['stats']['meanB']), 2)
-        local_report.text("STD: {std}".format(std=res_lh[i]['stats']['std']), 2)
-        local_report.text("z value: {z}".format(z=res_lh[i]['stats']['z_value']), 2)
-        local_report.text("median: {median}".format(median=res_lh[i]['stats']['B_median']), 2)
-        local_report.text("1st quartile: {fstQ}".format(fstQ=res_lh[i]['stats']['1stQ']), 2)
-        local_report.text("3rd quartile: {trdQ}".format(trdQ=res_lh[i]['stats']['3rdQ']), 2)
+        local_report.texts("")
+        local_report.texts("Basic statistics:", 1)
+        local_report.texts("number of neighbors: {an_num}".format(an_num=res_lh[i]['stats']['neighbour_num']), 2)
+        local_report.texts("mean B value: {meanB}".format(meanB=res_lh[i]['stats']['meanB']), 2)
+        local_report.texts("STD: {std}".format(std=res_lh[i]['stats']['std']), 2)
+        local_report.texts("z value: {z}".format(z=res_lh[i]['stats']['z_value']), 2)
+        local_report.texts("median: {median}".format(median=res_lh[i]['stats']['B_median']), 2)
+        local_report.texts("1st quartile: {fstQ}".format(fstQ=res_lh[i]['stats']['1stQ']), 2)
+        local_report.texts("3rd quartile: {trdQ}".format(trdQ=res_lh[i]['stats']['3rdQ']), 2)
         
 
     for w in water:
-        water_report.text(str(water[w]))
+        water_report.texts(str(water[w]))
     
 
     return [local_report, water_report]

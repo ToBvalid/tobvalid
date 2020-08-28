@@ -57,6 +57,12 @@ class JSONReport(ReportGenerator):
     def _htable(self, table):
         return table.data()
 
+    def _text(self, text):
+         return []
+
+    def _texts(self, text):
+         return []
+
     def _close(self):
         return self
 

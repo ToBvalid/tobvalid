@@ -27,7 +27,8 @@ import panel as pn
 from bokeh.resources import INLINE
 pn.extension()
 hv.extension('bokeh')
-
+import matplotlib 
+matplotlib.rcParams['figure.max_open_warning'] = 0
 
 def tobvalid(i, o=None, m=1, p=None):
 
@@ -97,12 +98,44 @@ def tobvalid(i, o=None, m=1, p=None):
                          ))
     reports["Local Analysis"] = local_reports
 
-    z = None
+    
 
+    mode, inv, global_reports = global_analysis(data, s, mode, gmm_params, file_name, igmm_params)
+    
+
+    global_reports.append(outlier_report)
+    reports["Global Analysis"] = global_reports
+
+    chain_names, chains = gp.chains(data_with_keys)
+
+    l = len(chains)
+    for i in range(l):
+        if len(chains[i]) >= 200:
+
+            chain = chains[i]
+            chain_name = chain_names[i]
+            chain_mode, chain_inv, chain_reports = global_analysis(np.array(chain), s, 'auto', gmm_params, "Chain {}".format(chain_name), igmm_params)
+            reports["Chain {}".format(chain_name)] = chain_reports
+        else:
+            print('Sorry.. Chain {} is too short to analyze.'.format(chain_names[i]))
+
+    HTMLReport(dpi=resolution).save_reports(reports, out, file_name)
+    
+    if mode > 1:
+        cluster_report(out + "/cluster report.txt" , inv.Z, data_with_keys, data_index)
+    
+
+    if inv.n_modes == 1:
+        if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
+            print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
+
+def global_analysis(data, s, mode, gmm_params, file_name, igmm_params):
     global_reports = []
     p_data = ph.peak_height(data, s)
     gauss = GaussianMixture(mode, tol=gmm_params[0], max_iter=gmm_params[1])
     gauss.fit(p_data)
+
+    z = None
     if gauss.n_modes > 1:
         z = gauss.Z[:, ::-1]
     global_reports.append(gauss.report(file_name))
@@ -113,19 +146,7 @@ def tobvalid(i, o=None, m=1, p=None):
     inv.fit(data, z=z)
     global_reports.append(inv.report(file_name))
 
-    if mode > 1:
-        cluster_report(out + "/cluster report.txt" , inv.Z, data_with_keys, data_index)
-    
-    global_reports.append(outlier_report)
-    
-
-    reports["Global Analysis"] = global_reports
-    HTMLReport(dpi=resolution).save_reports(reports, out, file_name)
-    
-
-    if inv.n_modes == 1:
-        if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
-            print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
+    return mode, inv, global_reports
 
 def cluster_report(path, Z, B_with_keys, data_index):
     cluster_report = open(path, "w")
