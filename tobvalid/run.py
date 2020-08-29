@@ -28,7 +28,7 @@ from bokeh.resources import INLINE
 pn.extension()
 hv.extension('bokeh')
 
-def tobvalid(i, o=None, m=1, p=None):
+def tobvalid(i, o=None, m=1, p=None, g=False, c=False, l=False):
 
     mode = m
     try:
@@ -43,7 +43,7 @@ def tobvalid(i, o=None, m=1, p=None):
         mode = process_mode(mode)
 
         summury(i, out, mode, local_params, ligand_params,
-                gmm_params, igmm_params, resolution)
+                gmm_params, igmm_params, resolution, g, c, l)
         (s, data, data_with_keys) = gp.gemmy_parse(i)
 
         if s > 20:
@@ -81,51 +81,54 @@ def tobvalid(i, o=None, m=1, p=None):
 
     data, data_index = ot.remove_outliers(data)
 
-    local_reports.extend(lc.local_analysis(i,
-                      r_main=local_params[0],
-                      r_wat=local_params[1],
-                      olowmin=local_params[2],
-                      olowq3=local_params[3],
-                      ohighmax=local_params[4],
-                      ohighq1=local_params[5]
-                      ))
-    local_reports.extend(lc.ligand_validation(i,
-                         r_main=ligand_params[0],
-                         olowmin=ligand_params[1],
-                         ohighmax=ligand_params[2],
-                         ))
-    reports["Local Analysis"] = local_reports
+    if l:
+        local_reports.extend(lc.local_analysis(i,
+                        r_main=local_params[0],
+                        r_wat=local_params[1],
+                        olowmin=local_params[2],
+                        olowq3=local_params[3],
+                        ohighmax=local_params[4],
+                        ohighq1=local_params[5]
+                        ))
+        local_reports.extend(lc.ligand_validation(i,
+                            r_main=ligand_params[0],
+                            olowmin=ligand_params[1],
+                            ohighmax=ligand_params[2],
+                            ))
+        reports["Local Analysis"] = local_reports
 
     
+    if g:
+        mode, inv, global_reports = global_analysis(data, s, mode, gmm_params, file_name, igmm_params)
+        
 
-    mode, inv, global_reports = global_analysis(data, s, mode, gmm_params, file_name, igmm_params)
-    
+        global_reports.append(outlier_report)
+        reports["Global Analysis"] = global_reports
 
-    global_reports.append(outlier_report)
-    reports["Global Analysis"] = global_reports
+        if mode > 1:
+            cluster_report(out + "/cluster report.txt" , inv.Z, data_with_keys, data_index)
+        
 
-    chain_names, chains = gp.chains(data_with_keys)
+        if inv.n_modes == 1:
+            if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
+                print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
-    l = len(chains)
-    for i in range(l):
-        if len(chains[i]) >= 200:
+    if c:
+        chain_names, chains = gp.chains(data_with_keys)
 
-            chain = chains[i]
-            chain_name = chain_names[i]
-            chain_mode, chain_inv, chain_reports = global_analysis(np.array(chain), s, 'auto', gmm_params, "Chain {}".format(chain_name), igmm_params)
-            reports["Chain {}".format(chain_name)] = chain_reports
-        else:
-            print('Sorry.. Chain {} is too short to analyze.'.format(chain_names[i]))
+        l = len(chains)
+        for i in range(l):
+            if len(chains[i]) >= 200:
+
+                chain = chains[i]
+                chain_name = chain_names[i]
+                chain_mode, chain_inv, chain_reports = global_analysis(np.array(chain), s, 'auto', gmm_params, "Chain {}".format(chain_name), igmm_params)
+                reports["Chain {}".format(chain_name)] = chain_reports
+            else:
+                print('Sorry.. Chain {} is too short to analyze.'.format(chain_names[i]))
 
     HTMLReport(dpi=resolution).save_reports(reports, out, file_name)
     
-    if mode > 1:
-        cluster_report(out + "/cluster report.txt" , inv.Z, data_with_keys, data_index)
-    
-
-    if inv.n_modes == 1:
-        if (max(inv.alpha) > 10 or max(np.sqrt(inv.betta) > 30)):
-            print("High values of alpha and/or beta parameters. Please consider the structure for re-refinement with consideraton of blur or other options")
 
 def global_analysis(data, s, mode, gmm_params, file_name, igmm_params):
     global_reports = []
@@ -372,7 +375,7 @@ config_schema = {
 }
 
 
-def summury(input, output, mode, local_params, ligand_params, gmm_params, igmm_params, resolution):
+def summury(input, output, mode, local_params, ligand_params, gmm_params, igmm_params, resolution, g, c, l):
     print('''
 tobvalid version 0.9.6
 
@@ -398,9 +401,15 @@ Input file: {}
 Output directory: {}
 
 Numder of modes: {}
+
+Performing global analysis: {}
+
+Performing local analysis: {}
+
+Performing chain analysis: {}
 ----------------------------------------------------------------------------------------------------
 
-Used parameters are listed below:\n'''.format(input, output, mode))
+Used parameters are listed below:\n'''.format(input, output, mode, g, l, c))
 
     print("Gaussian Mixture Model:")
     print("Tolerance: ", gmm_params[0])
@@ -452,10 +461,24 @@ Acta Cryst. D76 (to be published)''')
     parser.add_argument("-p", "--params", type=str, metavar='<json parameter file>',
                         default=None, help="Path to the json config file")
 
+    parser.add_argument("-g", action="store_true", help="Perform global analysis")
+    parser.add_argument("-l", action="store_true", help="Perform local analysis")
+    parser.add_argument("-c", action="store_true", help="Perform chain analysis")
+                        
+
     args = parser.parse_args()
 
     if args.input == None:
         parser.error(
             "the following arguments are required: -i/--input <pdb file>")
 
-    return tobvalid(args.input, o=args.output, m=args.modes, p=args.params)
+    g = args.g
+    c= args.c
+    l= args.l
+
+    if not g and not c and not l:
+        g = True
+        c = True
+        l = True
+
+    return tobvalid(args.input, o=args.output, m=args.modes, p=args.params, g=g, c=c, l=l)
