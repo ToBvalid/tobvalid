@@ -84,9 +84,14 @@ class HTMLReport(ReportGenerator):
         return self
 
     def _image(self, plot, dpi=None):
-
-        self.__panel.append(pn.pane.Matplotlib(plot.func()(
-            plot.figure(), plot.title()), dpi=self._dpi, tight=True))
+        
+        pyplot = plot.figure()
+        plot.func()(pyplot, plot.title())
+        file = plot.head() + self._extension + ".png"
+        pyplot.savefig(self._dir + "/" + file, dpi=dpi)
+        pyplot.clf()
+        pyplot.close()
+        self.__panel.append(pn.pane.HTML('<br><img src="' + file + ' " width="600" height="400"><br>'))
         return self
 
     def _vtable(self, table):

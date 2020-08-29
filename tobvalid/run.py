@@ -27,8 +27,6 @@ import panel as pn
 from bokeh.resources import INLINE
 pn.extension()
 hv.extension('bokeh')
-import matplotlib 
-matplotlib.rcParams['figure.max_open_warning'] = 0
 
 def tobvalid(i, o=None, m=1, p=None):
 
