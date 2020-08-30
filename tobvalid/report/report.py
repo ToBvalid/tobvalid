@@ -107,14 +107,29 @@ class Head(Nest):
         return self.__head
 
 
+class Texts(Element):
+    def __init__(self, parent):
+        Element.__init__(self, parent)
+        self.__texts = []
+
+    def append(self, text):
+        return self.__texts.append(text)
+
+    def texts(self):
+        return self.__texts
+
 class Text(Element):
-    def __init__(self, parent, text, name=None):
+    def __init__(self, parent, text, indent = 0, name=None):
         Element.__init__(self, parent)
         self.__text = text
         self.__name = name
+        self.__indent = indent
+
+    def indent(self):
+        return self.__indent
 
     def text(self):
-        return self.__text
+        return self.__text    
 
     def name(self):
         return self.__name
@@ -147,8 +162,14 @@ class Report:
         self.__last().addchild(Plot(self.__last(), name, figure, func, title))
         return self
 
-    def text(self, string, name=None):
-        self.__last().addchild(Text(self.__last(), string, name))
+    def text(self, string, indent = 0, name=None):
+        self.__last().addchild(Text(self.__last(), string, indent, name))
+        return self
+
+    def texts(self, string, indent = 0, name=None):
+        if not isinstance(self.__last_child(), Texts):
+            self.__last().addchild(Texts(self.__last())) 
+        self.__last_child().append(Text(self.__last(), string, indent, name))       
         return self
 
     def vtable(self, columns, data, name=""):
@@ -171,6 +192,11 @@ class Report:
     def __last(self):
         return self.__elements[-1]
 
+    def __last_child(self):
+        if (len(self.__last().children()) > 0):
+            return self.__elements[-1].children()[-1]
+        return None        
+
 
 class ReportGenerator:
 
@@ -179,16 +205,22 @@ class ReportGenerator:
         self._dpi = dpi
 
     def save(self, report, path, name):
+        self._dir = path
+        self._prepare(report)
+        self._save(name + self._extension)
+    
+    def save_reports(self, reports, path, name):
+        pass
+
+    def _prepare(self, report, path):
         self._open()
         self._dir = path
-
         self._title(report.title())
         for element in report.items():
             self._write(element)
 
         self._close()
-        self._save(name + self._extension)
-
+    
     def _write(self, element):
         if isinstance(element, Head):
             return self._head(element)
@@ -201,6 +233,12 @@ class ReportGenerator:
 
         elif isinstance(element, Plot):
             return self._image(element, self._dpi)
+
+        elif isinstance(element, Text):
+            return self._text(element)    
+
+        elif isinstance(element, Texts):
+            return self._texts(element)  
 
     def __open(self):
         pass
@@ -221,6 +259,12 @@ class ReportGenerator:
         pass
 
     def _htable(self, table):
+        pass
+
+    def _text(self, text):
+        pass
+
+    def _texts(self, text):
         pass
 
     def _close(self):

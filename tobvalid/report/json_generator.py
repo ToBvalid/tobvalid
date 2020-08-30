@@ -7,7 +7,7 @@ Mozilla Public License, version 2.0; see LICENSE.
 """
 
 
-from ._report import ReportGenerator
+from .report import ReportGenerator
 import json
 
 
@@ -56,6 +56,12 @@ class JSONReport(ReportGenerator):
 
     def _htable(self, table):
         return table.data()
+
+    def _text(self, text):
+         return []
+
+    def _texts(self, text):
+         return []
 
     def _close(self):
         return self
