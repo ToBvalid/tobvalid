@@ -194,8 +194,7 @@ class BaseMixture:
         
         fig = plt.figure()
         sns.set_style("white")
-        sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
-            edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
+        sns.histplot(self.data, bins='scott', color='grey', edgecolor=None, linewidth=0, stat="density")
         
         values = self.pdf(x)
         plt.plot(x, values, color='black')
@@ -239,8 +238,7 @@ class BaseMixture:
 
         fig = plt.figure()
         sns.set_style("white")
-        sns.distplot(self.data, bins='scott', kde=False, hist_kws=dict(
-            edgecolor=None, linewidth=0, color='grey'), norm_hist=True)
+        sns.histplot(self.data, bins='scott', color='grey', edgecolor=None, linewidth=0, stat="density")
         values = self._kernel(x)
 
         plt.plot(x, values, color='black')

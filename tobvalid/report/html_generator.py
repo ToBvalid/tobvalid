@@ -109,8 +109,7 @@ class HTMLReport(ReportGenerator):
             self.__html = self.__html + '</TR>\n'
 
         self.__table_close()
-        self.__panel.append(pn.pane.HTML(self.__html, style={
-                            'HDR': {'background-color': '#AACCFF'}}))
+        self.__panel.append(pn.pane.HTML(self.__html, styles={'background-color': '#AACCF'}))
         return self
 
     def _htable(self, table):
@@ -130,12 +129,11 @@ class HTMLReport(ReportGenerator):
             self.__html = self.__html + '</TR>\n'
 
         self.__table_close()
-        self.__panel.append(pn.pane.HTML(self.__html, style={
-                            'HDR': {'background-color': '#AACCFF'}}))
+        self.__panel.append(pn.pane.HTML(self.__html, styles={'background-color': '#AACCF'}))
         return self
 
     def _text(self, text):
-        self.__panel.append(pn.pane.HTML(text.text(), style={"padding-left":"{}px".format(30*text.indent()), "text-align": "left"}))
+        self.__panel.append(pn.pane.HTML(text.text(), styles={"padding-left":"{}px".format(30*text.indent()), "text-align": "left"}))
         return self
 
     def _texts(self, texts):
