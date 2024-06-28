@@ -43,6 +43,10 @@ Local and global analysis of macromolecular atomic displacement parameters
 RC Masmaliyeva, KH Babai, GN Murshudov - Acta Crystallographica Section D: Structural Biology, 2020
 https://doi.org/10.1107/S2059798320011043
 
+Analysis and validation of macromolecular B values
+RC Masmaliyeva, GN Murshudov - Acta Crystallographica Section D: Structural Biology, 2019
+https://doi.org/10.1107/S2059798319004807
+
 Please contact authors: rmasmaliyeva@gmail.com,
 lekaveh@gmail.com, garib@mrc-lmb.cam.ac.uk
 
