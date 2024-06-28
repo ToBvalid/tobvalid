@@ -13,6 +13,9 @@ import pandas as pd
 import warnings
 from ..report import Report
 
+from warnings import simplefilter
+simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
+
 
 def occupancy_estimate(b1, b2, smax):
     ccm = (b2/b1)**1.5
