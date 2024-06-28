@@ -377,7 +377,7 @@ config_schema = {
 
 def summury(input, output, mode, local_params, ligand_params, gmm_params, igmm_params, resolution, g, c, l):
     print('''
-tobvalid version 0.9.6
+tobvalid version 0.9.8
 
 ----------------------------------------------------------------------------------------------------
 
