@@ -11,8 +11,12 @@ import warnings
 
 
 def gemmy_resolution(file):
-    st = gemmi.read_structure(file)
-    s = st.resolution
+    if file.endswith('.cif') or file.endswith('.gz'):
+        block = gemmi.cif.read(file).sole_block()
+        s = block.find_value('_reflns.d_resolution_high')
+    elif file.endswith('.pdb'):
+        st = gemmi.read_structure(file)
+        s = st.resolution
     if s == "":
         return -1
     return s
@@ -23,9 +27,9 @@ def gemmy_parse(file):
         st = gemmi.read_structure(file)
     except RuntimeError as e:
         raise ValueError(str(e))
-    s = st.resolution
+    s = gemmy_resolution(file)
 
-    if s == "" or s == 0:
+    if s == -1 or s == 0:
         warnings.warn(
             "Resolution is not available. Default 2.1 will be used..")
         s = 2.1
