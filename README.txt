@@ -39,6 +39,9 @@ ToBvalid-0.9.8 comes under Mozilla Public License Version 2.0 licence.
 
 Citations
 =========
+Local and global analysis of macromolecular atomic displacement parameters
+RC Masmaliyeva, KH Babai, GN Murshudov - Acta Crystallographica Section D: Structural Biology, 2020
+https://doi.org/10.1107/S2059798320011043
 
 Please contact authors: rmasmaliyeva@gmail.com,
 lekaveh@gmail.com, garib@mrc-lmb.cam.ac.uk
