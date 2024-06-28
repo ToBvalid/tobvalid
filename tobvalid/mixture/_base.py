@@ -16,6 +16,9 @@ import statsmodels.api as sm
 from ..stats import kde_silverman
 import time
 
+import warnings
+warnings.filterwarnings( "ignore", module = "statsmodels\..*" )
+
 class BaseMixture:
     """Base class for mixture models.
 
