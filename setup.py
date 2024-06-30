@@ -7,9 +7,10 @@ Mozilla Public License, version 2.0; see LICENSE.
 """
 
 from setuptools import setup, find_packages
+from tobvalid import __version__
 
 setup(name='tobvalid',
-      version='0.9.9',
+      version = __version__,
       description='Python library and a program for the statistical analysis and validation of ADPs (Atom Displacement Parameters)',
       url='https://github.com/ToBvalid/tobvalid',
       author='Rafiga Masmaliyeva, Kaveh Babai, Garib N. Murshudov',

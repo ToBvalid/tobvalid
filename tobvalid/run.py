@@ -8,6 +8,7 @@ Mozilla Public License, version 2.0; see LICENSE.
 
 import argparse
 import re
+from tobvalid import __version__
 from tobvalid.report.html_generator import HTMLReport
 from tobvalid.mixture.gaussian_mixture import GaussianMixture
 from tobvalid.mixture.invgamma_mixture import InverseGammaMixture
@@ -449,9 +450,12 @@ def main_func():
     parser = argparse.ArgumentParser(description='''"Local and global analysis of macromolecular Atomic Displacement Parameters".
 R.Masmaliyeva, K.Babai & G.Murshudov.
 Acta Cryst. D76 (to be published)''')
+    parser.add_argument('-v', '--version', action='version',
+                        version='%(prog)s ' + __version__)
+    
+    required_named = parser.add_argument_group('required arguments')
 
-    requiredNamed = parser.add_argument_group('required arguments')
-    requiredNamed.add_argument(
+    required_named.add_argument(
         "-i",  "--input", type=str, metavar="<pdb file>", help="Path to the pdb file.")
 
     parser.add_argument("-o", "--output", type=str,
@@ -468,7 +472,7 @@ Acta Cryst. D76 (to be published)''')
 
     args = parser.parse_args()
 
-    if args.input == None:
+    if not args.input:
         parser.error(
             "the following arguments are required: -i/--input <pdb file>")
 
